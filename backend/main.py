@@ -15,6 +15,7 @@ app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY", "supersecret"))
 
 SCOPES = [
+    "openid",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/calendar"
 ]
@@ -144,4 +145,4 @@ def google_callback(request: Request):
         print("DB Error:", e)
         return {"error": "Failed to process user info"}
 
-    return RedirectResponse(url="/")
+    return RedirectResponse(url="http://localhost:3000")
