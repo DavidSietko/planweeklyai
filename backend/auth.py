@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 import google_auth_oauthlib.flow
@@ -33,7 +33,7 @@ def get_db_connection():
         dbname=os.getenv("dbname")
     )
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=JWT_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
@@ -60,6 +60,11 @@ def google_login(request: Request):
 @router.get("/auth/google/callback")
 def google_callback(request: Request):
     state = request.session.get('state')
+    returned_state = request.query_params.get("state")
+
+    if not state or state != returned_state:
+        raise HTTPException(status_code=400, detail="Invalid state parameter")
+
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         'secrets/client_secret.json',
         scopes=SCOPES,
@@ -73,7 +78,7 @@ def google_callback(request: Request):
 
     credentials = flow.credentials
 
-    id_token_value = getattr(credentials, 'id_token', None) or getattr(credentials, '_id_token', None)
+    id_token_value = getattr(credentials, 'id_token', None)
     if not id_token_value:
         return {"error": "No id_token returned from Google. Cannot authenticate user."}
 
@@ -141,17 +146,17 @@ def google_callback(request: Request):
         cursor.close()
         conn.close()
 
-        # Store user ID in session
-        request.session["user_id"] = user_id
+        # Delete session data after successful login
+        request.session.clear()
 
         # Create JWT access token for the user
         jwt_expiry = timedelta(days=7)
-        access_token = create_access_token({"user_id": user_id, "email": user_email}, expires_delta=jwt_expiry)
+        token = create_token({"user_id": user_id, "email": user_email}, expires_delta=jwt_expiry)
 
         response = RedirectResponse(url=f"{os.getenv('BASE_URL')}/dashboard")
         response.set_cookie(
-            key="access_token",
-            value=access_token,
+            key="token",
+            value=token,
             httponly=True,
             secure=True,
             samesite="lax",
