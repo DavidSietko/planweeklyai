@@ -1,6 +1,16 @@
 import styles from "../page.module.css";
 
 export default function Login() {
+
+  const handleLogin = async() => {
+    const response = await fetch("http://localhost:8000/auth/google/login");
+    if (!response.ok) {
+      throw new Error("Failed to login");
+    }
+    const data = await response.json();
+    window.location.href = data.url;
+  }
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -8,7 +18,7 @@ export default function Login() {
           Sign in to PlanWeeklyAI
         </h1>
         <a
-          href="/api/auth/google" // Placeholder, to be implemented
+          href="http://localhost:8000/auth/google/login"
           className={styles.primary}
           style={{
             display: 'flex',

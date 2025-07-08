@@ -3,8 +3,11 @@ from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 import google_auth_oauthlib.flow
 import psycopg2
+from psycopg2.extras import RealDictCursor
 import os
 from dotenv import load_dotenv
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 load_dotenv()
 
@@ -26,6 +29,11 @@ def get_db_connection():
         port=os.getenv("port"),
         dbname=os.getenv("dbname")
     )
+
+
+@app.get("/")
+def main():
+    return {"message": "Hello, World!"}
 
 @app.get("/auth/google/login")
 def google_login(request: Request):
@@ -59,13 +67,81 @@ def google_callback(request: Request):
     flow.fetch_token(authorization_response=authorization_response)
 
     credentials = flow.credentials
-    # Store credentials in session or database as needed
-    request.session['credentials'] = {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes
-    }
+
+    # Extract user info from ID token
+    id_token_value = getattr(credentials, 'id_token', None) or getattr(credentials, '_id_token', None)
+    if not id_token_value:
+        return {"error": "No id_token returned from Google. Cannot authenticate user."}
+
+    id_info = id_token.verify_oauth2_token(
+        id_token_value,
+        requests.Request(),
+        credentials.client_id
+    )
+
+    google_sub = id_info["sub"]
+    user_email = id_info["email"]
+    granted_scopes = credentials.scopes  # Store as list for Postgres text[]
+    token_expiry = credentials.expiry
+
+    # Store/update in DB
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+        # Check if user already exists
+        cursor.execute("SELECT id FROM users WHERE google_sub = %s", (google_sub,))
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            # Update token info
+            cursor.execute("""
+                UPDATE users SET 
+                    access_token = %s,
+                    refresh_token = %s,
+                    token_expiry = %s,
+                    granted_scopes = %s
+                WHERE google_sub = %s
+            """, (
+                credentials.token,
+                credentials.refresh_token,
+                token_expiry,
+                granted_scopes,
+                google_sub
+            ))
+            user_id = existing_user['id']
+        else:
+            # Create new user
+            cursor.execute("""
+                INSERT INTO users (
+                    google_sub, email, access_token, refresh_token, token_expiry, granted_scopes
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id
+            """, (
+                google_sub,
+                user_email,
+                credentials.token,
+                credentials.refresh_token,
+                token_expiry,
+                granted_scopes
+            ))
+            insert_result = cursor.fetchone()
+            if insert_result is None:
+                conn.rollback()
+                cursor.close()
+                conn.close()
+                return {"error": "Failed to insert new user."}
+            user_id = insert_result["id"]
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        # Store user ID in session
+        request.session["user_id"] = user_id
+
+    except Exception as e:
+        print("DB Error:", e)
+        return {"error": "Failed to process user info"}
 
     return RedirectResponse(url="/")
