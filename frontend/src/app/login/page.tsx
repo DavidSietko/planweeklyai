@@ -1,14 +1,23 @@
+"use client";
+
 import styles from "../page.module.css";
 
 export default function Login() {
+  // This handler triggers a full browser redirect to the FastAPI backend,
+  // which starts the Google OAuth flow. The backend will handle all redirects
+  // and eventually send the user back to the homepage ("/") after login.
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:8000/auth/google/login";
+  };
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>
           Sign in to PlanWeeklyAI
         </h1>
-        <a
-          href="/api/auth/google" // Placeholder, to be implemented
+        <button
+          onClick={handleGoogleLogin}
           className={styles.primary}
           style={{
             display: 'flex',
@@ -22,6 +31,8 @@ export default function Login() {
             boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
             margin: '0 auto',
             maxWidth: 320,
+            border: 'none',
+            cursor: 'pointer',
           }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -34,7 +45,7 @@ export default function Login() {
             </g>
           </svg>
           Sign in with Google
-        </a>
+        </button>
       </main>
     </div>
   );
