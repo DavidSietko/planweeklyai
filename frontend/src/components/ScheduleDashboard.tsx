@@ -339,13 +339,14 @@ function TaskCard({ task, onUpdate, onRemove }: TaskCardProps) {
                     <label className="block text-sm font-medium text-gray-700">Preferred Time</label>
                     <select
                         value={task.preferredTime || ''}
-                        onChange={(e) => onUpdate({ preferredTime: e.target.value as "morning" | "afternoon" | "evening" | undefined })}
+                        onChange={(e) => onUpdate({ preferredTime: e.target.value as "morning" | "afternoon" | "evening" | "night" | undefined })}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">No preference</option>
                         <option value="morning">Morning</option>
                         <option value="afternoon">Afternoon</option>
                         <option value="evening">Evening</option>
+                        <option value="night">Night</option>
                     </select>
                 </div>
             </div>
