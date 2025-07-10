@@ -1,5 +1,19 @@
 import { Task, MandatoryTask, Schedule, Day, DaySelection, DaySchedule } from './interfaces';
 
+// UUID generator with fallback for mobile browsers
+const generateUUID = (): string => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    
+    // Fallback UUID generator
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
 // Day utilities
 export const DAYS_OF_WEEK: Day[] = [
     Day.MONDAY,
@@ -62,7 +76,7 @@ export const getTaskDurationString = (task: Task): string => {
 // Schedule utilities
 export const createEmptySchedule = (): Schedule => {
     return {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: 'My Schedule',
         startTime: '09:00',
         endTime: '17:00',
@@ -76,11 +90,12 @@ export const createEmptySchedule = (): Schedule => {
 
 export const createEmptyTask = (): Task => {
     return {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         summary: '',
         duration: { hours: 1, minutes: 0 },
         onWeekends: false,
         preferredTime: undefined,
+        frequency: 1, // Default to once per week
         color: '#3B82F6', // Default blue
         priority: 'medium'
     };
@@ -88,7 +103,7 @@ export const createEmptyTask = (): Task => {
 
 export const createEmptyMandatoryTask = (): MandatoryTask => {
     return {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         summary: '',
         startTime: '09:00',
         endTime: '17:00',

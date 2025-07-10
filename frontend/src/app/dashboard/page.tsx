@@ -69,26 +69,28 @@ export default function Dashboard() {
                 <h1 className="ml-4 text-2xl font-bold text-gray-900">Dashboard</h1>
               </div>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <button
                   onClick={() => setViewMode('edit')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  className={`px-2 py-1 sm:px-4 sm:py-2 rounded-md font-medium transition-colors text-sm sm:text-base ${
                     viewMode === 'edit'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  Edit Schedule
+                  <span className="hidden sm:inline">Edit Schedule</span>
+                  <span className="sm:hidden">Edit</span>
                 </button>
                 <button
                   onClick={() => setViewMode('view')}
-                  className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  className={`px-2 py-1 sm:px-4 sm:py-2 rounded-md font-medium transition-colors text-sm sm:text-base ${
                     viewMode === 'view'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  View Schedule
+                  <span className="hidden sm:inline">View Schedule</span>
+                  <span className="sm:hidden">View</span>
                 </button>
               </div>
             </div>

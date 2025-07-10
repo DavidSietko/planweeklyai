@@ -18,6 +18,7 @@ export interface Task {
     };
     onWeekends: boolean;
     preferredTime?: "morning" | "afternoon" | "evening" | "night"; // Optional since not all tasks need specific time
+    frequency: number; // How many times per week (1 to number of active days)
     color?: string; // For UI customization
     priority?: 'low' | 'medium' | 'high';
 }
