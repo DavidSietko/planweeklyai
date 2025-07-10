@@ -17,6 +17,8 @@ JWT_EXPIRE_MINUTES = 60 * 24 * 7
 def get_token(request: Request):    
     return request.cookies.get("token")
 
+
+# data must be a dictionary with the following keys: user_id, email
 def create_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=JWT_EXPIRE_MINUTES))
@@ -33,11 +35,20 @@ def decode_token(token: str):
     except exceptions.JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+# returns the user_id from the token, from field user_id
 def get_user_id(token: str | None):
     if not token:
         raise HTTPException(status_code=401, detail="No token provided")
     payload = decode_token(token)
-    return payload.get("sub")
+    return payload.get("user_id")
+
+
+# returns the email from the token, from field email
+def get_email(token: str | None):
+    if not token:
+        raise HTTPException(status_code=401, detail="No token provided")
+    payload = decode_token(token)
+    return payload.get("email")
 
 
 

@@ -67,7 +67,6 @@ def google_callback(request: Request):
         clock_skew_in_seconds=10  # Allow 10 seconds of clock skew
     )
 
-    google_sub = id_info["sub"]
     user_email = id_info["email"]
     granted_scopes = credentials.scopes  # Store as list for Postgres text[]
     token_expiry = credentials.expiry
@@ -78,7 +77,7 @@ def google_callback(request: Request):
         cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         # Check if user already exists
-        cursor.execute("SELECT id FROM users WHERE google_sub = %s", (google_sub,))
+        cursor.execute("SELECT id FROM users WHERE email = %s", (user_email,))
         existing_user = cursor.fetchone()
 
         if existing_user:
@@ -89,24 +88,23 @@ def google_callback(request: Request):
                     refresh_token = %s,
                     token_expiry = %s,
                     granted_scopes = %s
-                WHERE google_sub = %s
+                WHERE id = %s
             """, (
                 credentials.token,
                 credentials.refresh_token,
                 token_expiry,
                 granted_scopes,
-                google_sub
+                existing_user['id']
             ))
             user_id = existing_user['id']
         else:
             # Create new user
             cursor.execute("""
                 INSERT INTO users (
-                    google_sub, email, access_token, refresh_token, token_expiry, granted_scopes
-                ) VALUES (%s, %s, %s, %s, %s, %s)
+                    email, access_token, refresh_token, token_expiry, granted_scopes
+                ) VALUES (%s, %s, %s, %s, %s)
                 RETURNING id
             """, (
-                google_sub,
                 user_email,
                 credentials.token,
                 credentials.refresh_token,
