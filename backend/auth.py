@@ -1,16 +1,12 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
-from starlette.middleware.sessions import SessionMiddleware
 import google_auth_oauthlib.flow
 from google.oauth2 import id_token
 from google.auth.transport import requests
 import os
-import psycopg2
 from psycopg2.extras import RealDictCursor
-from jose import jwt
-from datetime import datetime, timedelta, timezone
-from typing import Optional
-
+from datetime import timedelta
+from utils import get_db_connection, create_token
 router = APIRouter()
 
 SCOPES = [
@@ -21,24 +17,6 @@ SCOPES = [
 REDIRECT_URI = "http://localhost:8000/auth/google/callback"
 JWT_SECRET = os.getenv("JWT_SECRET", "superjwtsecret")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_EXPIRE_MINUTES = 60 * 24 * 7
-
-
-def get_db_connection():
-    return psycopg2.connect(
-        user=os.getenv("user"),
-        password=os.getenv("password"),
-        host=os.getenv("host"),
-        port=os.getenv("port"),
-        dbname=os.getenv("dbname")
-    )
-
-def create_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=JWT_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
-    return encoded_jwt
 
 @router.get("/auth/google/login")
 def google_login(request: Request):
