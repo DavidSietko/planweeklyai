@@ -6,12 +6,16 @@ import os
 import psycopg2
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from fastapi import Request
 
 load_dotenv()
 
 JWT_SECRET = os.getenv("JWT_SECRET", "superjwtsecret")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_MINUTES = 60 * 24 * 7
+
+def get_token(request: Request):    
+    return request.cookies.get("token")
 
 def create_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -20,7 +24,9 @@ def create_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
-def decode_token(token: str):
+def decode_token(token: str | None):
+    if not token:
+        raise HTTPException(status_code=401, detail="No token provided")
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
