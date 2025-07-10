@@ -85,7 +85,8 @@ def google_callback(request: Request):
     id_info = id_token.verify_oauth2_token(
         id_token_value,
         requests.Request(),
-        credentials.client_id
+        credentials.client_id,
+        clock_skew_in_seconds=10  # Allow 10 seconds of clock skew
     )
 
     google_sub = id_info["sub"]

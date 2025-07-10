@@ -1,6 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary-blue: #2563eb;
+  --primary-green: #22c55e;
+  --gradient-main: linear-gradient(90deg, #2563eb 0%, #22c55e 100%);
+  --button-shadow: 0 2px 12px rgba(37, 99, 235, 0.10);
 }
 
 @media (prefers-color-scheme: dark) {
