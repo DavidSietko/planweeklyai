@@ -24,9 +24,7 @@ def create_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
-def decode_token(token: str | None):
-    if not token:
-        raise HTTPException(status_code=401, detail="No token provided")
+def decode_token(token: str):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         return payload
@@ -35,7 +33,9 @@ def decode_token(token: str | None):
     except exceptions.JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-def get_user_id(token: str):
+def get_user_id(token: str | None):
+    if not token:
+        raise HTTPException(status_code=401, detail="No token provided")
     payload = decode_token(token)
     return payload.get("sub")
 
