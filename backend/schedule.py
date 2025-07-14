@@ -6,6 +6,7 @@ from psycopg2.extras import RealDictCursor
 from datetime import datetime, time, timezone
 import json
 from typing import List, Dict, Any
+from fastapi.responses import RedirectResponse
 
 router = APIRouter()
 
@@ -66,7 +67,7 @@ def get_schedule(request: Request):
     cookie_token = get_token(request)
     user_id = get_user_id(cookie_token)
     if not user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        return RedirectResponse(url="/login")
     
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -76,19 +77,19 @@ def get_schedule(request: Request):
     if not schedule:
         # create a new schedule with proper PostgreSQL types matching frontend structure
         cursor.execute("""INSERT INTO schedules (
-        user_id, name, startTime, endTime, activeDays, tasks, mandatoryTasks, createdAt, updatedAt )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
-        (
-            user_id, 
-            "My Schedule",  # Matches frontend createEmptySchedule()
-            time(9, 0),  # 09:00 as time object (matches frontend default)
-            time(17, 0),  # 17:00 as time object (matches frontend default)
-            format_active_days_for_db(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]),  # Matches frontend default
-            format_tasks_for_db([]),  # Empty tasks array
-            format_mandatory_tasks_for_db([]),  # Empty mandatory tasks array
-            get_current_timestamp(),  # timestamptz
-            get_current_timestamp()   # timestamptz
-        ))
+    user_id, name, start_time, end_time, active_days, tasks, mandatory_tasks, created_at, updated_at )
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
+    (
+        user_id, 
+        "My Schedule",
+        time(9, 0),
+        time(17, 0),
+        format_active_days_for_db(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]),
+        format_tasks_for_db([]),
+        format_mandatory_tasks_for_db([]),
+        get_current_timestamp(),
+        get_current_timestamp()
+    ))
         conn.commit()
         cursor.execute("SELECT * FROM schedules WHERE user_id = %s", (user_id,))
         schedule = cursor.fetchone()
@@ -106,16 +107,16 @@ async def save_schedule(request: Request):
 
     data = await request.json()
     name = data.get("name")
-    startTime = data.get("startTime")
-    endTime = data.get("endTime")
-    activeDays = data.get("activeDays")
+    startTime = data.get("start_ime")
+    endTime = data.get("end_time")
+    activeDays = data.get("active_days")
     tasks = data.get("tasks")
-    mandatoryTasks = data.get("mandatoryTasks")
+    mandatoryTasks = data.get("mandatory_tasks")
 
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-    cursor.execute("""UPDATE schedules SET name = %s, startTime = %s, endTime = %s, activeDays = %s, tasks = %s, mandatoryTasks = %s, updatedAt = %s WHERE user_id = %s""",
+    cursor.execute("""UPDATE schedules SET name = %s, start_time = %s, end_time = %s, active_days = %s, tasks = %s, mandatory_tasks = %s, updated_at = %s WHERE user_id = %s""",
     (name, startTime, endTime, activeDays, tasks, mandatoryTasks, get_current_timestamp(), user_id))
     conn.commit()
     cursor.close()

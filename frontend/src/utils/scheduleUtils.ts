@@ -74,18 +74,29 @@ export const getTaskDurationString = (task: Task): string => {
 };
 
 // Schedule utilities
-export const createEmptySchedule = (): Schedule => {
-    return {
-        id: generateUUID(),
-        name: 'My Schedule',
-        startTime: '09:00',
-        endTime: '17:00',
-        activeDays: [Day.MONDAY, Day.TUESDAY, Day.WEDNESDAY, Day.THURSDAY, Day.FRIDAY], // Default to weekdays
-        tasks: [],
-        mandatoryTasks: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-    };
+export const getSchedule = async (): Promise<Schedule> => {
+    const response = await fetch(`${process.env.BACKEND_URL}/schedule/get`, {
+        method: 'GET',
+        credentials: 'include',
+    });
+    const data = await response.json();
+    if(!response.ok) {
+        throw new Error(data.message);
+    }
+    return data;
+};
+
+export const saveSchedule = async (schedule: Schedule): Promise<Schedule> => {
+    const response = await fetch(`${process.env.BACKEND_URL}/schedule/save`, {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify(schedule)
+    });
+    const data = await response.json();
+    if(!response.ok) {
+        throw new Error(data.message);
+    }
+    return data;
 };
 
 export const createEmptyTask = (): Task => {

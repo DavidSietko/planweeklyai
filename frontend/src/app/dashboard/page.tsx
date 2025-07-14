@@ -1,21 +1,44 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Schedule, Day } from '../../utils/interfaces';
-import { createEmptySchedule } from '../../utils/scheduleUtils';
+import { getSchedule, saveSchedule } from '../../utils/scheduleUtils';
 import ScheduleDashboard from '../../components/ScheduleDashboard';
 import DayScheduleView from '../../components/DayScheduleView';
 
 export default function Dashboard() {
-  const [schedule, setSchedule] = useState<Schedule>(createEmptySchedule());
+
+  const emptySchedule: Schedule = {
+    id: '',
+    name: '',
+    startTime: '',
+    endTime: '',
+    tasks: [],
+    mandatoryTasks: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    activeDays: [],
+  };
+
+  const [schedule, setSchedule] = useState<Schedule>(emptySchedule);
   const [selectedDay, setSelectedDay] = useState<Day>(Day.MONDAY);
   const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleSaveSchedule = (savedSchedule: Schedule) => {
-    setSchedule(savedSchedule);
-    console.log('Schedule saved:', savedSchedule);
+  const handleGetSchedule = async () => {
+    const schedule = await getSchedule();
+    setSchedule(schedule);
   };
+
+  const handleSaveSchedule = async (savedSchedule: Schedule) => {
+    await saveSchedule(savedSchedule);
+    setSchedule(savedSchedule);
+  };
+
+  useEffect(() => {
+    handleGetSchedule();
+  }, []);
+
 
   const handleGenerateSchedule = () => {
     // TODO: Implement schedule generation logic

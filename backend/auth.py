@@ -14,9 +14,6 @@ SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/calendar"
 ]
-REDIRECT_URI = "http://localhost:8000/auth/google/callback"
-JWT_SECRET = os.getenv("JWT_SECRET", "superjwtsecret")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 
 @router.get("/auth/google/login")
 def google_login(request: Request):
@@ -24,7 +21,7 @@ def google_login(request: Request):
         'secrets/client_secret.json',
         scopes=SCOPES
     )
-    flow.redirect_uri = REDIRECT_URI
+    flow.redirect_uri = os.getenv("REDIRECT_URI")
 
     authorization_url, state = flow.authorization_url(
         access_type="offline",
@@ -48,7 +45,7 @@ def google_callback(request: Request):
         scopes=SCOPES,
         state=state
     )
-    flow.redirect_uri = REDIRECT_URI
+    flow.redirect_uri = os.getenv("REDIRECT_URI")
 
     # Reconstruct the full URL the user was redirected to
     authorization_response = str(request.url)
@@ -130,7 +127,7 @@ def google_callback(request: Request):
         jwt_expiry = timedelta(days=7)
         token = create_token({"user_id": user_id, "email": user_email}, expires_delta=jwt_expiry)
 
-        response = RedirectResponse(url=f"{os.getenv('BASE_URL')}/dashboard")
+        response = RedirectResponse(url=f"{os.getenv('FRONTEND_URL')}/dashboard")
         response.set_cookie(
             key="token",
             value=token,
