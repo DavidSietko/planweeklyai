@@ -97,5 +97,31 @@ def get_schedule(request: Request):
     conn.close()
     return schedule
 
+@router.post("/schedule/save")
+async def save_schedule(request: Request):
+    cookie_token = get_token(request)
+    user_id = get_user_id(cookie_token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")#
+
+    data = await request.json()
+    name = data.get("name")
+    startTime = data.get("startTime")
+    endTime = data.get("endTime")
+    activeDays = data.get("activeDays")
+    tasks = data.get("tasks")
+    mandatoryTasks = data.get("mandatoryTasks")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+    cursor.execute("""UPDATE schedules SET name = %s, startTime = %s, endTime = %s, activeDays = %s, tasks = %s, mandatoryTasks = %s, updatedAt = %s WHERE user_id = %s""",
+    (name, startTime, endTime, activeDays, tasks, mandatoryTasks, get_current_timestamp(), user_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return {"message": "Schedule saved successfully"}
+
+
 
 
