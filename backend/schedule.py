@@ -6,7 +6,6 @@ from psycopg2.extras import RealDictCursor
 from datetime import datetime, time, timezone
 import json
 from typing import List, Dict, Any
-from fastapi.responses import RedirectResponse
 
 router = APIRouter()
 
@@ -72,12 +71,20 @@ def time_to_str(val):
 @router.get("/schedule/get")
 def get_schedule(request: Request):
     cookie_token = get_token(request)
+    if not cookie_token:
+        raise HTTPException(status_code=401, detail="Not authenticated. Please log in.")
     user_id = get_user_id(cookie_token)
     if not user_id:
-        return RedirectResponse(url="/login")
+        raise HTTPException(status_code=401, detail="There was an error logging in. Please log in again.")
     
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+    # check if user_id matches a valid user in the database
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found. Please log in.")
 
     cursor.execute("SELECT * FROM schedules WHERE user_id = %s", (user_id,))
     schedule = cursor.fetchone()

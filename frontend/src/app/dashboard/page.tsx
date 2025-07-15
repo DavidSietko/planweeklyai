@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Schedule, Day } from '../../utils/interfaces';
 import { getSchedule, saveSchedule } from '../../utils/scheduleUtils';
 import ScheduleDashboard from '../../components/ScheduleDashboard';
@@ -13,6 +14,8 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -20,7 +23,13 @@ export default function DashboardPage() {
         const data = await getSchedule();
         setSchedule(data);
       } catch (err: any) {
-        setError(err.message || 'Failed to load schedule');
+        const msg = err.message || 'Failed to load schedule';
+        console.log(msg);
+        if (msg.includes('Not authenticated') || msg.includes('logging in') || msg.includes("log in")) {
+          setAuthError(msg);
+        } else {
+          setError(msg);
+        }
       } finally {
         setLoading(false);
       }
@@ -44,6 +53,20 @@ export default function DashboardPage() {
   };
 
   if (loading) return <div>Loading schedule...</div>;
+  if (authError) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg border border-gray-200 mt-12">
+        <h2 className="text-xl font-bold text-red-700 mb-4">Authentication Required</h2>
+        <p className="text-gray-700 mb-6">{authError}</p>
+        <button
+          onClick={() => router.push('/login')}
+          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-opacity-50"
+        >
+          Go to Login
+        </button>
+      </div>
+    </div>
+  );
   if (error) return <div>Error: {error}</div>;
   if (!schedule) return <div>No schedule found.</div>;
 

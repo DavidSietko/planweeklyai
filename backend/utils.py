@@ -13,7 +13,7 @@ load_dotenv()
 JWT_EXPIRE_MINUTES = 60 * 24 * 7
 
 def get_token(request: Request):    
-    return request.cookies.get("token")
+    return request.cookies.get("token") or None
 
 def get_jwt_secret() -> str:
     secret = os.getenv("JWT_SECRET")
@@ -43,12 +43,12 @@ def decode_token(token: str):
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except exceptions.JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token. Please log in again.")
 
 # returns the user_id from the token, from field user_id
 def get_user_id(token: str | None):
     if not token:
-        raise HTTPException(status_code=401, detail="No token provided")
+        raise HTTPException(status_code=401, detail="No token provided. Please log in again.")
     payload = decode_token(token)
     return payload.get("user_id")
 
