@@ -25,13 +25,17 @@ export default function ScheduleDashboard({
 }: ScheduleDashboardProps) {
     const [schedule, setSchedule] = useState<Schedule>(initialSchedule);
     const [errors, setErrors] = useState<string[]>([]);
+    const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+    let successTimeout: NodeJS.Timeout | null = null;
 
     const handleScheduleNameChange = (name: string) => {
         setSchedule(prev => ({ ...prev, name }));
+        setSaveSuccess(false);
     };
 
     const handleTimeChange = (field: 'start_time' | 'end_time', value: string) => {
         setSchedule(prev => ({ ...prev, [field]: value }));
+        setSaveSuccess(false);
     };
 
     const handleDaySelectionChange = (day: Day, selected: boolean) => {
@@ -39,6 +43,7 @@ export default function ScheduleDashboard({
             const newActiveDays = selected 
                 ? [...prev.active_days, day]
                 : prev.active_days.filter(d => d !== day);
+            setSaveSuccess(false);
             return { ...prev, active_days: newActiveDays };
         });
     };
@@ -101,6 +106,9 @@ export default function ScheduleDashboard({
                 updatedAt: new Date()
             };
             onSave?.(updatedSchedule);
+            setSaveSuccess(true);
+            if (successTimeout) clearTimeout(successTimeout);
+            successTimeout = setTimeout(() => setSaveSuccess(false), 3000);
         }
     };
 
@@ -246,6 +254,13 @@ export default function ScheduleDashboard({
                 ))}
                     </div>
                 </div>
+
+                {/* Success Popup */}
+                {saveSuccess && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 className="text-sm font-medium text-green-800 mb-2">Schedule saved successfully!</h3>
+                    </div>
+                )}
 
                 {/* Validation Errors */}
                 {errors.length > 0 && (
