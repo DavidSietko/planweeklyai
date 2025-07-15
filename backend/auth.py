@@ -6,7 +6,7 @@ from google.auth.transport import requests
 import os
 from psycopg2.extras import RealDictCursor
 from datetime import timedelta
-from utils import get_db_connection, create_token
+from utils import get_db_connection, create_token, get_token, get_user_id
 router = APIRouter()
 
 SCOPES = [
@@ -14,6 +14,26 @@ SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/calendar"
 ]
+
+@router.get("/auth/login")
+def login(request: Request):
+    # see if the user is already logged in
+    token = get_token(request)
+    if not token:
+        raise HTTPException(status_code=401, detail="No token provided. Please log in again.")
+    else:
+        user_id = get_user_id(token)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User not found. Please log in again.")
+        else:
+            conn = get_db_connection()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            if not user:
+                raise HTTPException(status_code=401, detail="User not found. Please log in again.")
+            else:
+                return {"message": "Login successfull"}
 
 @router.get("/auth/google/login")
 def google_login(request: Request):

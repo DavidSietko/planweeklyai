@@ -38,8 +38,18 @@ export default function DashboardPage() {
   }, []);
 
   const handleSaveSchedule = async (savedSchedule: Schedule) => {
-    await saveSchedule(savedSchedule);
-    setSchedule(savedSchedule);
+    try {
+      await saveSchedule(savedSchedule);
+      setSchedule(savedSchedule);
+    } catch (err: any) {
+      const msg = err.message || 'Failed to save schedule';
+      console.log(msg);
+      if (msg.includes('Not authenticated') || msg.includes('logging in') || msg.includes("log in")) {
+        setAuthError(msg);
+      } else {
+        setError(msg);
+      }
+    }
   };
 
   const handleGenerateSchedule = () => {

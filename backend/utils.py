@@ -7,6 +7,7 @@ import psycopg2
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import Request
+from fastapi.responses import RedirectResponse
 
 load_dotenv()
 
@@ -45,6 +46,17 @@ def decode_token(token: str):
     except exceptions.JWTError:
         raise HTTPException(status_code=401, detail="Invalid token. Please log in again.")
 
+def decode_token_redirect(token: str) -> RedirectResponse | dict:
+    try:
+        jwt_secret = get_jwt_secret()
+        jwt_algorithm = get_jwt_algorithm()
+        payload = jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
+        return payload
+    except ExpiredSignatureError:
+        return RedirectResponse(url=f"{os.getenv('FRONTEND_URL')}")
+    except exceptions.JWTError:
+        return RedirectResponse(url=f"{os.getenv('FRONTEND_URL')}")
+
 # returns the user_id from the token, from field user_id
 def get_user_id(token: str | None):
     if not token:
@@ -52,10 +64,19 @@ def get_user_id(token: str | None):
     payload = decode_token(token)
     return payload.get("user_id")
 
+def get_user_id_redirect(token: str | None):
+    if not token:
+        return RedirectResponse(url=f"{os.getenv('FRONTEND_URL')}")
+    payload = decode_token_redirect(token)
+    if isinstance(payload, RedirectResponse):
+        return payload
+    else:
+        return payload.get("user_id")
+
 # returns the email from the token, from field email
 def get_email(token: str | None):
     if not token:
-        raise HTTPException(status_code=401, detail="No token provided")
+        raise HTTPException(status_code=401, detail="No token provided. Please log in again.s")
     payload = decode_token(token)
     return payload.get("email")
 

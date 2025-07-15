@@ -1,13 +1,31 @@
 "use client";
 
 import styles from "../page.module.css";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
+  const router = useRouter();
   // This handler triggers a full browser redirect to the FastAPI backend,
   // which starts the Google OAuth flow. The backend will handle all redirects
   // and eventually send the user back to the homepage ("/") after login.
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:8000/auth/google/login";
+    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_AUTH_URL}`;
+  };
+
+  const handleLogin = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error("Error logging in user. Using Google login instead.");
+      }
+      router.push("/dashboard");
+    } catch (Error: any) {
+      handleGoogleLogin();
+    }
   };
 
   return (
@@ -17,7 +35,7 @@ export default function Login() {
           Sign in to PlanWeeklyAI
         </h1>
         <button
-          onClick={handleGoogleLogin}
+          onClick={handleLogin}
           className={styles.primary}
           style={{
             display: 'flex',

@@ -120,7 +120,7 @@ async def save_schedule(request: Request):
     cookie_token = get_token(request)
     user_id = get_user_id(cookie_token)
     if not user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")#
+        raise HTTPException(status_code=401, detail="Not logged in. Please log in again")#
 
     data = await request.json()
     name = data.get("name")
