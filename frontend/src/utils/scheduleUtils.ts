@@ -36,7 +36,8 @@ export const DAY_LABELS: Record<Day, string> = {
 };
 
 // Time utilities
-export const formatTime = (time: string): string => {
+export const formatTime = (time?: string): string => {
+    if (!time) return '';
     // Convert "HH:MM" to "HH:MM AM/PM"
     const [hours, minutes] = time.split(':').map(Number);
     const period = hours >= 12 ? 'PM' : 'AM';
@@ -90,7 +91,14 @@ export const saveSchedule = async (schedule: Schedule): Promise<Schedule> => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/schedule/save`, {
         method: 'POST',
         credentials: 'include',
-        body: JSON.stringify(schedule)
+        body: JSON.stringify({
+            name: schedule.name,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+            active_days: schedule.active_days,
+            tasks: schedule.tasks,
+            mandatory_tasks: schedule.mandatory_tasks
+        })
     });
     const data = await response.json();
     if(!response.ok) {
@@ -136,8 +144,9 @@ export const getDaySchedule = (schedule: Schedule, day: Day): DaySchedule | null
     const applicableTasks = schedule.tasks.filter(task => shouldShowTask(task, day));
     
     // Filter mandatory tasks that apply to this day
-    const applicableMandatoryTasks = schedule.mandatory_tasks.filter(task => 
-        isDayInRange(day, task.start_day, task.end_day)
+    const applicableMandatoryTasks = schedule.mandatory_tasks.filter(task => {
+        return isDayInRange(day, task.start_day, task.end_day)
+    }
     );
 
     return {

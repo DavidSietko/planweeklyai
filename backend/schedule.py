@@ -62,6 +62,13 @@ def get_current_timestamp() -> datetime:
     """Get current UTC timestamp for timestamptz fields"""
     return datetime.now(timezone.utc)
 
+def time_to_str(val):
+    if isinstance(val, time):
+        return val.strftime("%H:%M")
+    if isinstance(val, str):
+        return val
+    return ""
+
 @router.get("/schedule/get")
 def get_schedule(request: Request):
     cookie_token = get_token(request)
@@ -96,7 +103,9 @@ def get_schedule(request: Request):
     
     cursor.close()
     conn.close()
-    print(schedule)
+    if schedule:
+        schedule["start_time"] = time_to_str(schedule["start_time"])
+        schedule["end_time"] = time_to_str(schedule["end_time"])
     return schedule
 
 @router.post("/schedule/save")
@@ -108,17 +117,24 @@ async def save_schedule(request: Request):
 
     data = await request.json()
     name = data.get("name")
-    startTime = data.get("start_ime")
-    endTime = data.get("end_time")
-    activeDays = data.get("active_days")
+    start_time = data.get("start_time")
+    end_time = data.get("end_time")
+    active_days = data.get("active_days")
     tasks = data.get("tasks")
-    mandatoryTasks = data.get("mandatory_tasks")
+    mandatory_tasks = data.get("mandatory_tasks")
 
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     cursor.execute("""UPDATE schedules SET name = %s, start_time = %s, end_time = %s, active_days = %s, tasks = %s, mandatory_tasks = %s, updated_at = %s WHERE user_id = %s""",
-    (name, startTime, endTime, activeDays, tasks, mandatoryTasks, get_current_timestamp(), user_id))
+    (name, 
+    start_time, 
+    end_time, 
+    format_active_days_for_db(active_days),
+    format_tasks_for_db(tasks),
+    format_mandatory_tasks_for_db(mandatory_tasks),
+    get_current_timestamp(), user_id))
+
     conn.commit()
     cursor.close()
     conn.close()

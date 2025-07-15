@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3001")
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY", "supersecret"))
