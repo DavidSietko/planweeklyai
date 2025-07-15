@@ -75,7 +75,7 @@ export const getTaskDurationString = (task: Task): string => {
 
 // Schedule utilities
 export const getSchedule = async (): Promise<Schedule> => {
-    const response = await fetch(`${process.env.BACKEND_URL}/schedule/get`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/schedule/get`, {
         method: 'GET',
         credentials: 'include',
     });
@@ -87,7 +87,7 @@ export const getSchedule = async (): Promise<Schedule> => {
 };
 
 export const saveSchedule = async (schedule: Schedule): Promise<Schedule> => {
-    const response = await fetch(`${process.env.BACKEND_URL}/schedule/save`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/schedule/save`, {
         method: 'POST',
         credentials: 'include',
         body: JSON.stringify(schedule)
@@ -104,8 +104,8 @@ export const createEmptyTask = (): Task => {
         id: generateUUID(),
         summary: '',
         duration: { hours: 1, minutes: 0 },
-        onWeekends: false,
-        preferredTime: undefined,
+        on_weekends: false,
+        preferred_time: undefined,
         frequency: 1, // Default to once per week
         color: '#3B82F6', // Default blue
         priority: 'medium'
@@ -116,10 +116,10 @@ export const createEmptyMandatoryTask = (): MandatoryTask => {
     return {
         id: generateUUID(),
         summary: '',
-        startTime: '09:00',
-        endTime: '17:00',
-        startDay: Day.MONDAY,
-        endDay: Day.FRIDAY,
+        start_time: '09:00',
+        end_time: '17:00',
+        start_day: Day.MONDAY,
+        end_day: Day.FRIDAY,
         color: '#EF4444', // Default red
         location: undefined
     };
@@ -128,7 +128,7 @@ export const createEmptyMandatoryTask = (): MandatoryTask => {
 // New function to get schedule for a specific day
 export const getDaySchedule = (schedule: Schedule, day: Day): DaySchedule | null => {
     // Check if this schedule applies to the given day
-    if (!schedule.activeDays.includes(day)) {
+    if (!schedule.active_days.includes(day)) {
         return null;
     }
 
@@ -136,16 +136,16 @@ export const getDaySchedule = (schedule: Schedule, day: Day): DaySchedule | null
     const applicableTasks = schedule.tasks.filter(task => shouldShowTask(task, day));
     
     // Filter mandatory tasks that apply to this day
-    const applicableMandatoryTasks = schedule.mandatoryTasks.filter(task => 
-        isDayInRange(day, task.startDay, task.endDay)
+    const applicableMandatoryTasks = schedule.mandatory_tasks.filter(task => 
+        isDayInRange(day, task.start_day, task.end_day)
     );
 
     return {
         day,
-        startTime: schedule.startTime,
-        endTime: schedule.endTime,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time,
         tasks: applicableTasks,
-        mandatoryTasks: applicableMandatoryTasks
+        mandatory_tasks: applicableMandatoryTasks
     };
 };
 
@@ -166,28 +166,28 @@ export const isDayInRange = (day: Day, startDay: Day, endDay: Day): boolean => {
 
 // Get all days that have schedules
 export const getActiveDays = (schedule: Schedule): Day[] => {
-    return schedule.activeDays;
+    return schedule.active_days;
 };
 
 // Get formatted active days string
 export const getActiveDaysString = (schedule: Schedule): string => {
-    if (schedule.activeDays.length === 0) return 'No days selected';
-    if (schedule.activeDays.length === 7) return 'Every day';
-    if (schedule.activeDays.length === 5 && 
-        schedule.activeDays.includes(Day.MONDAY) && 
-        schedule.activeDays.includes(Day.TUESDAY) && 
-        schedule.activeDays.includes(Day.WEDNESDAY) && 
-        schedule.activeDays.includes(Day.THURSDAY) && 
-        schedule.activeDays.includes(Day.FRIDAY)) {
+    if (schedule.active_days.length === 0) return 'No days selected';
+    if (schedule.active_days.length === 7) return 'Every day';
+    if (schedule.active_days.length === 5 && 
+        schedule.active_days.includes(Day.MONDAY) && 
+        schedule.active_days.includes(Day.TUESDAY) && 
+        schedule.active_days.includes(Day.WEDNESDAY) && 
+        schedule.active_days.includes(Day.THURSDAY) && 
+        schedule.active_days.includes(Day.FRIDAY)) {
         return 'Weekdays';
     }
-    if (schedule.activeDays.length === 2 && 
-        schedule.activeDays.includes(Day.SATURDAY) && 
-        schedule.activeDays.includes(Day.SUNDAY)) {
+    if (schedule.active_days.length === 2 && 
+        schedule.active_days.includes(Day.SATURDAY) && 
+        schedule.active_days.includes(Day.SUNDAY)) {
         return 'Weekends';
     }
     
-    return schedule.activeDays.map(day => DAY_LABELS[day]).join(', ');
+    return schedule.active_days.map(day => DAY_LABELS[day]).join(', ');
 };
 
 // Validation utilities
@@ -208,15 +208,15 @@ export const validateSchedule = (schedule: Schedule): string[] => {
         errors.push('Schedule name is required');
     }
     
-    if (!isTimeRangeValid(schedule.startTime, schedule.endTime)) {
+    if (!isTimeRangeValid(schedule.start_time, schedule.end_time)) {
         errors.push('End time must be after start time');
     }
     
-    if (schedule.activeDays.length === 0) {
+    if (schedule.active_days.length === 0) {
         errors.push('At least one day must be selected');
     }
     
-    if (schedule.tasks.length === 0 && schedule.mandatoryTasks.length === 0) {
+    if (schedule.tasks.length === 0 && schedule.mandatory_tasks.length === 0) {
         errors.push('Schedule must have at least one task or mandatory task');
     }
     
@@ -249,7 +249,7 @@ export const isWeekend = (day: Day): boolean => {
 
 export const shouldShowTask = (task: Task, day: Day): boolean => {
     if (isWeekend(day)) {
-        return task.onWeekends;
+        return task.on_weekends;
     }
     return true;
 };

@@ -96,6 +96,7 @@ def get_schedule(request: Request):
     
     cursor.close()
     conn.close()
+    print(schedule)
     return schedule
 
 @router.post("/schedule/save")
