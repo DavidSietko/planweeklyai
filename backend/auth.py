@@ -1,16 +1,12 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
-from starlette.middleware.sessions import SessionMiddleware
 import google_auth_oauthlib.flow
 from google.oauth2 import id_token
 from google.auth.transport import requests
 import os
-import psycopg2
 from psycopg2.extras import RealDictCursor
-from jose import jwt
-from datetime import datetime, timedelta, timezone
-from typing import Optional
-
+from datetime import timedelta
+from utils import get_db_connection, create_token, get_token, get_user_id
 router = APIRouter()
 
 SCOPES = [
@@ -18,27 +14,26 @@ SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/calendar"
 ]
-REDIRECT_URI = "http://localhost:8000/auth/google/callback"
-JWT_SECRET = os.getenv("JWT_SECRET", "superjwtsecret")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_EXPIRE_MINUTES = 60 * 24 * 7
 
-
-def get_db_connection():
-    return psycopg2.connect(
-        user=os.getenv("user"),
-        password=os.getenv("password"),
-        host=os.getenv("host"),
-        port=os.getenv("port"),
-        dbname=os.getenv("dbname")
-    )
-
-def create_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=JWT_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
-    return encoded_jwt
+@router.get("/auth/login")
+def login(request: Request):
+    # see if the user is already logged in
+    token = get_token(request)
+    if not token:
+        raise HTTPException(status_code=401, detail="No token provided. Please log in again.")
+    else:
+        user_id = get_user_id(token)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="User not found. Please log in again.")
+        else:
+            conn = get_db_connection()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            if not user:
+                raise HTTPException(status_code=401, detail="User not found. Please log in again.")
+            else:
+                return {"message": "Login successfull"}
 
 @router.get("/auth/google/login")
 def google_login(request: Request):
@@ -46,7 +41,7 @@ def google_login(request: Request):
         'secrets/client_secret.json',
         scopes=SCOPES
     )
-    flow.redirect_uri = REDIRECT_URI
+    flow.redirect_uri = os.getenv("REDIRECT_URI")
 
     authorization_url, state = flow.authorization_url(
         access_type="offline",
@@ -70,7 +65,7 @@ def google_callback(request: Request):
         scopes=SCOPES,
         state=state
     )
-    flow.redirect_uri = REDIRECT_URI
+    flow.redirect_uri = os.getenv("REDIRECT_URI")
 
     # Reconstruct the full URL the user was redirected to
     authorization_response = str(request.url)
@@ -89,7 +84,6 @@ def google_callback(request: Request):
         clock_skew_in_seconds=10  # Allow 10 seconds of clock skew
     )
 
-    google_sub = id_info["sub"]
     user_email = id_info["email"]
     granted_scopes = credentials.scopes  # Store as list for Postgres text[]
     token_expiry = credentials.expiry
@@ -100,7 +94,7 @@ def google_callback(request: Request):
         cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         # Check if user already exists
-        cursor.execute("SELECT id FROM users WHERE google_sub = %s", (google_sub,))
+        cursor.execute("SELECT id FROM users WHERE email = %s", (user_email,))
         existing_user = cursor.fetchone()
 
         if existing_user:
@@ -111,24 +105,23 @@ def google_callback(request: Request):
                     refresh_token = %s,
                     token_expiry = %s,
                     granted_scopes = %s
-                WHERE google_sub = %s
+                WHERE id = %s
             """, (
                 credentials.token,
                 credentials.refresh_token,
                 token_expiry,
                 granted_scopes,
-                google_sub
+                existing_user['id']
             ))
             user_id = existing_user['id']
         else:
             # Create new user
             cursor.execute("""
                 INSERT INTO users (
-                    google_sub, email, access_token, refresh_token, token_expiry, granted_scopes
-                ) VALUES (%s, %s, %s, %s, %s, %s)
+                    email, access_token, refresh_token, token_expiry, granted_scopes
+                ) VALUES (%s, %s, %s, %s, %s)
                 RETURNING id
             """, (
-                google_sub,
                 user_email,
                 credentials.token,
                 credentials.refresh_token,
@@ -154,7 +147,7 @@ def google_callback(request: Request):
         jwt_expiry = timedelta(days=7)
         token = create_token({"user_id": user_id, "email": user_email}, expires_delta=jwt_expiry)
 
-        response = RedirectResponse(url=f"{os.getenv('BASE_URL')}/dashboard")
+        response = RedirectResponse(url=f"{os.getenv('FRONTEND_URL')}/dashboard")
         response.set_cookie(
             key="token",
             value=token,

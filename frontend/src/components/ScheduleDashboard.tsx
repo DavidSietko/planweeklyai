@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Schedule, Task, MandatoryTask, Day, DaySelection } from '../utils/interfaces';
 import { 
     DAY_LABELS, 
     formatTime, 
     getTaskDurationString, 
-    createEmptySchedule,
     createEmptyTask,
     createEmptyMandatoryTask,
     validateSchedule,
@@ -16,33 +15,45 @@ import {
 } from '../utils/scheduleUtils';
 
 interface ScheduleDashboardProps {
-    initialSchedule?: Schedule;
-    onSave?: (schedule: Schedule) => void;
+    initialSchedule: Schedule;
+    saveSuccess: boolean;
+    setSaveSuccess: React.Dispatch<React.SetStateAction<boolean>>;
+    noChange: boolean;
+    setNoChange: React.Dispatch<React.SetStateAction<boolean>>;
+    onSave: (schedule: Schedule) => void;
 }
 
 export default function ScheduleDashboard({ 
     initialSchedule, 
-    onSave 
+    saveSuccess,
+    setSaveSuccess,
+    noChange,
+    setNoChange,
+    onSave,
 }: ScheduleDashboardProps) {
-    const [schedule, setSchedule] = useState<Schedule>(
-        initialSchedule || createEmptySchedule()
-    );
+    const [schedule, setSchedule] = useState<Schedule>(initialSchedule);
     const [errors, setErrors] = useState<string[]>([]);
+    let successTimeout: NodeJS.Timeout | null = null;
+    let noChangesTimeout: NodeJS.Timeout | null = null;
+
 
     const handleScheduleNameChange = (name: string) => {
         setSchedule(prev => ({ ...prev, name }));
+        setSaveSuccess(false);
     };
 
-    const handleTimeChange = (field: 'startTime' | 'endTime', value: string) => {
+    const handleTimeChange = (field: 'start_time' | 'end_time', value: string) => {
         setSchedule(prev => ({ ...prev, [field]: value }));
+        setSaveSuccess(false);
     };
 
     const handleDaySelectionChange = (day: Day, selected: boolean) => {
         setSchedule(prev => {
             const newActiveDays = selected 
-                ? [...prev.activeDays, day]
-                : prev.activeDays.filter(d => d !== day);
-            return { ...prev, activeDays: newActiveDays };
+                ? [...prev.active_days, day]
+                : prev.active_days.filter(d => d !== day);
+            setSaveSuccess(false);
+            return { ...prev, active_days: newActiveDays };
         });
     };
 
@@ -59,7 +70,7 @@ export default function ScheduleDashboard({
             ...prev,
             tasks: prev.tasks.map(task => 
                 task.id === taskId ? { ...task, ...updates } : task
-            )
+            )   
         }));
     };
 
@@ -74,14 +85,14 @@ export default function ScheduleDashboard({
         const newMandatoryTask = createEmptyMandatoryTask();
         setSchedule(prev => ({
             ...prev,
-            mandatoryTasks: [...prev.mandatoryTasks, newMandatoryTask]
+            mandatory_tasks: [...prev.mandatory_tasks, newMandatoryTask]
         }));
     };
 
     const updateMandatoryTask = (taskId: string, updates: Partial<MandatoryTask>) => {
         setSchedule(prev => ({
             ...prev,
-            mandatoryTasks: prev.mandatoryTasks.map(task => 
+            mandatory_tasks: prev.mandatory_tasks.map(task => 
                 task.id === taskId ? { ...task, ...updates } : task
             )
         }));
@@ -90,24 +101,25 @@ export default function ScheduleDashboard({
     const removeMandatoryTask = (taskId: string) => {
         setSchedule(prev => ({
             ...prev,
-            mandatoryTasks: prev.mandatoryTasks.filter(task => task.id !== taskId)
+            mandatory_tasks: prev.mandatory_tasks.filter(task => task.id !== taskId)
         }));
     };
 
     const handleSave = () => {
+        onSave(schedule);
         const validationErrors = validateSchedule(schedule);
         setErrors(validationErrors);
         
         if (validationErrors.length === 0) {
-            const updatedSchedule = {
-                ...schedule,
-                updatedAt: new Date()
-            };
-            onSave?.(updatedSchedule);
+            if (successTimeout) clearTimeout(successTimeout);
+            successTimeout = setTimeout(() => setSaveSuccess(false), 3000);
+
+            if (noChangesTimeout) clearTimeout(noChangesTimeout);
+            noChangesTimeout = setTimeout(() => setNoChange(false), 3000);
         }
     };
 
-    const daySelection = arrayToDaySelection(schedule.activeDays);
+    const daySelection = arrayToDaySelection(schedule.active_days);
 
     return (
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
@@ -171,8 +183,8 @@ export default function ScheduleDashboard({
                         </label>
                         <input
                             type="time"
-                            value={schedule.startTime}
-                            onChange={(e) => handleTimeChange('startTime', e.target.value)}
+                            value={schedule.start_time}
+                            onChange={(e) => handleTimeChange('start_time', e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         />
                     </div>
@@ -182,8 +194,8 @@ export default function ScheduleDashboard({
                         </label>
                         <input
                             type="time"
-                            value={schedule.endTime}
-                            onChange={(e) => handleTimeChange('endTime', e.target.value)}
+                            value={schedule.end_time}
+                            onChange={(e) => handleTimeChange('end_time', e.target.value)}
                             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         />
                     </div>
@@ -208,7 +220,7 @@ export default function ScheduleDashboard({
                     </div>
                     
                     <div className="space-y-4">
-                        {schedule.mandatoryTasks.map((task) => (
+                        {schedule.mandatory_tasks.map((task) => (
                             <MandatoryTaskCard
                                 key={task.id}
                                 task={task}
@@ -250,6 +262,20 @@ export default function ScheduleDashboard({
                     </div>
                 </div>
 
+                {/* No Changes Popup */}
+                {noChange && (
+                    <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg">
+                        <h3 className="text-sm font-medium text-gray-700 mb-2">No changes to save.</h3>
+                    </div>
+                )}
+
+                {/* Success Popup */}
+                {saveSuccess && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 className="text-sm font-medium text-green-800 mb-2">Schedule saved successfully!</h3>
+                    </div>
+                )}
+
                 {/* Validation Errors */}
                 {errors.length > 0 && (
                     <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -289,7 +315,7 @@ interface TaskCardProps {
 
 function TaskCard({ task, schedule, onUpdate, onRemove }: TaskCardProps) {
     // Get the current schedule's active days to determine max frequency
-    const maxFrequency = schedule.activeDays.length;
+    const maxFrequency = schedule.active_days.length;
     
     return (
         <div className="p-6 border border-blue-200 rounded-xl bg-blue-50 hover:shadow-md transition-shadow">
@@ -343,8 +369,8 @@ function TaskCard({ task, schedule, onUpdate, onRemove }: TaskCardProps) {
                 <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">Preferred Time</label>
                     <select
-                        value={task.preferredTime || ''}
-                        onChange={(e) => onUpdate({ preferredTime: e.target.value as "morning" | "afternoon" | "evening" | "night" | undefined })}
+                        value={task.preferred_time || ''}
+                        onChange={(e) => onUpdate({ preferred_time: e.target.value as "morning" | "afternoon" | "evening" | "night" | undefined })}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">No preference</option>
@@ -390,8 +416,8 @@ function TaskCard({ task, schedule, onUpdate, onRemove }: TaskCardProps) {
                 <label className="flex items-center">
                     <input
                         type="checkbox"
-                        checked={task.onWeekends}
-                        onChange={(e) => onUpdate({ onWeekends: e.target.checked })}
+                        checked={task.on_weekends}
+                        onChange={(e) => onUpdate({ on_weekends: e.target.checked })}
                         className="mr-2 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
                     <span className="text-sm text-gray-700">Include on weekends</span>
@@ -434,8 +460,8 @@ function MandatoryTaskCard({ task, onUpdate, onRemove }: MandatoryTaskCardProps)
                     <label className="block text-sm font-medium text-gray-700">Start Time</label>
                     <input
                         type="time"
-                        value={task.startTime}
-                        onChange={(e) => onUpdate({ startTime: e.target.value })}
+                        value={task.start_time}
+                        onChange={(e) => onUpdate({ start_time: e.target.value })}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                 </div>
@@ -444,8 +470,8 @@ function MandatoryTaskCard({ task, onUpdate, onRemove }: MandatoryTaskCardProps)
                     <label className="block text-sm font-medium text-gray-700">End Time</label>
                     <input
                         type="time"
-                        value={task.endTime}
-                        onChange={(e) => onUpdate({ endTime: e.target.value })}
+                        value={task.end_time}
+                        onChange={(e) => onUpdate({ end_time: e.target.value })}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     />
                 </div>
@@ -455,8 +481,8 @@ function MandatoryTaskCard({ task, onUpdate, onRemove }: MandatoryTaskCardProps)
                 <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">Start Day</label>
                     <select
-                        value={task.startDay}
-                        onChange={(e) => onUpdate({ startDay: e.target.value as Day })}
+                        value={task.start_day}
+                        onChange={(e) => onUpdate({ start_day: e.target.value as Day })}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     >
                         {Object.entries(DAY_LABELS).map(([day, label]) => (
@@ -468,8 +494,8 @@ function MandatoryTaskCard({ task, onUpdate, onRemove }: MandatoryTaskCardProps)
                 <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">End Day</label>
                     <select
-                        value={task.endDay}
-                        onChange={(e) => onUpdate({ endDay: e.target.value as Day })}
+                        value={task.end_day}
+                        onChange={(e) => onUpdate({ end_day: e.target.value as Day })}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                     >
                         {Object.entries(DAY_LABELS).map(([day, label]) => (

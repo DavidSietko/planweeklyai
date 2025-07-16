@@ -1,20 +1,61 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Schedule, Day } from '../../utils/interfaces';
-import { createEmptySchedule } from '../../utils/scheduleUtils';
+import { getSchedule, saveSchedule, isSameSchedule } from '../../utils/scheduleUtils';
 import ScheduleDashboard from '../../components/ScheduleDashboard';
 import DayScheduleView from '../../components/DayScheduleView';
 
-export default function Dashboard() {
-  const [schedule, setSchedule] = useState<Schedule>(createEmptySchedule());
+export default function DashboardPage() {
+  const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [selectedDay, setSelectedDay] = useState<Day>(Day.MONDAY);
   const [viewMode, setViewMode] = useState<'edit' | 'view'>('edit');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<boolean>(false);
+  const [noChange, setNoChange] = useState<boolean>(false);
+  const router = useRouter();
 
-  const handleSaveSchedule = (savedSchedule: Schedule) => {
-    setSchedule(savedSchedule);
-    console.log('Schedule saved:', savedSchedule);
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      try {
+        const data = await getSchedule();
+        setSchedule(data);
+      } catch (err: any) {
+        const msg = err.message || 'Failed to load schedule';
+        console.log(msg);
+        if (msg.includes('Not authenticated') || msg.includes('logging in') || msg.includes("log in")) {
+          setAuthError(msg);
+        } else {
+          setError(msg);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSchedule();
+  }, []);
+
+  const handleSaveSchedule = async (savedSchedule: Schedule) => {
+    try {
+      if(schedule && isSameSchedule(schedule, savedSchedule)) {
+        setNoChange(true);
+        return;
+      }
+      await saveSchedule(savedSchedule);
+      setSchedule(savedSchedule);
+      setSaved(true);
+    } catch (err: any) {
+      const msg = err.message || 'Failed to save schedule';
+      if (msg.includes('Not authenticated') || msg.includes('logging in') || msg.includes("log in")) {
+        setAuthError(msg);
+      } else {
+        setError(msg);
+      }
+    }
   };
 
   const handleGenerateSchedule = () => {
@@ -27,12 +68,28 @@ export default function Dashboard() {
     setSidebarOpen(!sidebarOpen);
   };
 
+  if (loading) return <div>Loading schedule...</div>;
+  if (authError) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg border border-gray-200 mt-12">
+        <h2 className="text-xl font-bold text-red-700 mb-4">Authentication Required</h2>
+        <p className="text-gray-700 mb-6">{authError}</p>
+        <button
+          onClick={() => router.push('/login')}
+          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-opacity-50"
+        >
+          Go to Login
+        </button>
+      </div>
+    </div>
+  );
+  if (error) return <div>Error: {error}</div>;
+  if (!schedule) return <div>No schedule found.</div>;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Menu</h2>
           <div className="space-y-2">
@@ -72,22 +129,14 @@ export default function Dashboard() {
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <button
                   onClick={() => setViewMode('edit')}
-                  className={`px-2 py-1 sm:px-4 sm:py-2 rounded-md font-medium transition-colors text-sm sm:text-base ${
-                    viewMode === 'edit'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`px-2 py-1 sm:px-4 sm:py-2 rounded-md font-medium transition-colors text-sm sm:text-base ${viewMode === 'edit' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}
                 >
                   <span className="hidden sm:inline">Edit Schedule</span>
                   <span className="sm:hidden">Edit</span>
                 </button>
                 <button
                   onClick={() => setViewMode('view')}
-                  className={`px-2 py-1 sm:px-4 sm:py-2 rounded-md font-medium transition-colors text-sm sm:text-base ${
-                    viewMode === 'view'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                  className={`px-2 py-1 sm:px-4 sm:py-2 rounded-md font-medium transition-colors text-sm sm:text-base ${viewMode === 'view' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}
                 >
                   <span className="hidden sm:inline">View Schedule</span>
                   <span className="sm:hidden">View</span>
@@ -114,11 +163,7 @@ export default function Dashboard() {
                   <button
                     key={day}
                     onClick={() => setSelectedDay(day as Day)}
-                    className={`px-4 py-2 rounded-md font-medium whitespace-nowrap transition-colors ${
-                      selectedDay === day
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`}
+                    className={`px-4 py-2 rounded-md font-medium whitespace-nowrap transition-colors ${selectedDay === day ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}
                   >
                     {label}
                   </button>
@@ -136,6 +181,10 @@ export default function Dashboard() {
               <ScheduleDashboard
                 initialSchedule={schedule}
                 onSave={handleSaveSchedule}
+                saveSuccess={saved}
+                setSaveSuccess={setSaved}
+                noChange={noChange}
+                setNoChange={setNoChange}
               />
             ) : (
               <DayScheduleView
@@ -174,19 +223,19 @@ export default function Dashboard() {
                 <div>
                   <span className="font-medium text-gray-700">Active Days:</span>
                   <span className="ml-2 text-gray-600">
-                    {schedule.activeDays.length} days selected
+                    {schedule.active_days.length} days selected
                   </span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Daily Hours:</span>
                   <span className="ml-2 text-gray-600">
-                    {schedule.startTime} - {schedule.endTime}
+                    {schedule.start_time} - {schedule.end_time}
                   </span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Total Tasks:</span>
                   <span className="ml-2 text-gray-600">
-                    {schedule.tasks.length + schedule.mandatoryTasks.length}
+                    {schedule.tasks.length + schedule.mandatory_tasks.length}
                   </span>
                 </div>
               </div>

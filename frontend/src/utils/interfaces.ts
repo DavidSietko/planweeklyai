@@ -16,8 +16,8 @@ export interface Task {
         hours: number;
         minutes: number;
     };
-    onWeekends: boolean;
-    preferredTime?: "morning" | "afternoon" | "evening" | "night"; // Optional since not all tasks need specific time
+    on_weekends: boolean;
+    preferred_time?: "morning" | "afternoon" | "evening" | "night"; // Optional since not all tasks need specific time
     frequency: number; // How many times per week (1 to number of active days)
     color?: string; // For UI customization
     priority?: 'low' | 'medium' | 'high';
@@ -26,10 +26,10 @@ export interface Task {
 export interface MandatoryTask {
     id: string;
     summary: string;
-    startTime: string; // Format: "HH:MM" (24-hour)
-    endTime: string;   // Format: "HH:MM" (24-hour)
-    startDay: Day;
-    endDay: Day;
+    start_time: string; // Format: "HH:MM" (24-hour)
+    end_time: string;   // Format: "HH:MM" (24-hour)
+    start_day: Day;
+    end_day: Day;
     color?: string; // For UI customization
     location?: string; // Optional location info
 }
@@ -37,13 +37,13 @@ export interface MandatoryTask {
 export interface Schedule {
     id: string;
     name: string; // User-friendly name like "Work Schedule" or "Weekday Routine"
-    startTime: string; // Format: "HH:MM" (24-hour) - daily start time
-    endTime: string;   // Format: "HH:MM" (24-hour) - daily end time
-    activeDays: Day[]; // Which days this schedule applies to
+    start_time: string; // Format: "HH:MM" (24-hour) - daily start time
+    end_time: string;   // Format: "HH:MM" (24-hour) - daily end time
+    active_days: Day[]; // Which days this schedule applies to
     tasks: Task[];
-    mandatoryTasks: MandatoryTask[];
-    createdAt: Date;
-    updatedAt: Date;
+    mandatory_tasks: MandatoryTask[];
+    created_at: Date;
+    updated_at: Date;
 }
 
 // Utility types for form handling
@@ -55,7 +55,7 @@ export interface MandatoryTaskFormData extends Omit<MandatoryTask, 'id'> {
     id?: string; // Optional for new mandatory tasks
 }
 
-export interface ScheduleFormData extends Omit<Schedule, 'id' | 'createdAt' | 'updatedAt'> {
+export interface ScheduleFormData extends Omit<Schedule, 'id' | 'created_at' | 'updated_at'> {
     id?: string; // Optional for new schedules
 }
 
@@ -67,8 +67,8 @@ export type DaySelection = {
 // Type for displaying a specific day's schedule (derived from master schedule)
 export interface DaySchedule {
     day: Day;
-    startTime: string;
-    endTime: string;
+    start_time: string;
+    end_time: string;
     tasks: Task[];
-    mandatoryTasks: MandatoryTask[];
+    mandatory_tasks: MandatoryTask[];
 }
