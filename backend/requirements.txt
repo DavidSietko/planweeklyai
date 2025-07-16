@@ -9,3 +9,4 @@ python-dotenv
 itsdangerous
 psycopg2
 python-jose
+openai
