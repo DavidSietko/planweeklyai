@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Schedule, Task, MandatoryTask, Day, DaySelection } from '../utils/interfaces';
 import { 
     DAY_LABELS, 
@@ -16,17 +16,26 @@ import {
 
 interface ScheduleDashboardProps {
     initialSchedule: Schedule;
-    onSave?: (schedule: Schedule) => void;
+    saveSuccess: boolean;
+    setSaveSuccess: React.Dispatch<React.SetStateAction<boolean>>;
+    noChange: boolean;
+    setNoChange: React.Dispatch<React.SetStateAction<boolean>>;
+    onSave: (schedule: Schedule) => void;
 }
 
 export default function ScheduleDashboard({ 
     initialSchedule, 
-    onSave 
+    saveSuccess,
+    setSaveSuccess,
+    noChange,
+    setNoChange,
+    onSave,
 }: ScheduleDashboardProps) {
     const [schedule, setSchedule] = useState<Schedule>(initialSchedule);
     const [errors, setErrors] = useState<string[]>([]);
-    const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
     let successTimeout: NodeJS.Timeout | null = null;
+    let noChangesTimeout: NodeJS.Timeout | null = null;
+
 
     const handleScheduleNameChange = (name: string) => {
         setSchedule(prev => ({ ...prev, name }));
@@ -97,18 +106,16 @@ export default function ScheduleDashboard({
     };
 
     const handleSave = () => {
+        onSave(schedule);
         const validationErrors = validateSchedule(schedule);
         setErrors(validationErrors);
         
         if (validationErrors.length === 0) {
-            const updatedSchedule = {
-                ...schedule,
-                updatedAt: new Date()
-            };
-            onSave?.(updatedSchedule);
-            setSaveSuccess(true);
             if (successTimeout) clearTimeout(successTimeout);
             successTimeout = setTimeout(() => setSaveSuccess(false), 3000);
+
+            if (noChangesTimeout) clearTimeout(noChangesTimeout);
+            noChangesTimeout = setTimeout(() => setNoChange(false), 3000);
         }
     };
 
@@ -254,6 +261,13 @@ export default function ScheduleDashboard({
                 ))}
                     </div>
                 </div>
+
+                {/* No Changes Popup */}
+                {noChange && (
+                    <div className="p-4 bg-gray-100 border border-gray-300 rounded-lg">
+                        <h3 className="text-sm font-medium text-gray-700 mb-2">No changes to save.</h3>
+                    </div>
+                )}
 
                 {/* Success Popup */}
                 {saveSuccess && (

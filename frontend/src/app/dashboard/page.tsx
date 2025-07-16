@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Schedule, Day } from '../../utils/interfaces';
-import { getSchedule, saveSchedule } from '../../utils/scheduleUtils';
+import { getSchedule, saveSchedule, isSameSchedule } from '../../utils/scheduleUtils';
 import ScheduleDashboard from '../../components/ScheduleDashboard';
 import DayScheduleView from '../../components/DayScheduleView';
 
@@ -15,6 +15,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [saved, setSaved] = useState<boolean>(false);
+  const [noChange, setNoChange] = useState<boolean>(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,11 +41,15 @@ export default function DashboardPage() {
 
   const handleSaveSchedule = async (savedSchedule: Schedule) => {
     try {
+      if(schedule && isSameSchedule(schedule, savedSchedule)) {
+        setNoChange(true);
+        return;
+      }
       await saveSchedule(savedSchedule);
       setSchedule(savedSchedule);
+      setSaved(true);
     } catch (err: any) {
       const msg = err.message || 'Failed to save schedule';
-      console.log(msg);
       if (msg.includes('Not authenticated') || msg.includes('logging in') || msg.includes("log in")) {
         setAuthError(msg);
       } else {
@@ -175,6 +181,10 @@ export default function DashboardPage() {
               <ScheduleDashboard
                 initialSchedule={schedule}
                 onSave={handleSaveSchedule}
+                saveSuccess={saved}
+                setSaveSuccess={setSaved}
+                noChange={noChange}
+                setNoChange={setNoChange}
               />
             ) : (
               <DayScheduleView

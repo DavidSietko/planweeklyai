@@ -97,7 +97,8 @@ export const saveSchedule = async (schedule: Schedule): Promise<Schedule> => {
             end_time: schedule.end_time,
             active_days: schedule.active_days,
             tasks: schedule.tasks,
-            mandatory_tasks: schedule.mandatory_tasks
+            mandatory_tasks: schedule.mandatory_tasks,
+            updatedAt: new Date()
         })
     });
     const data = await response.json();
@@ -105,6 +106,15 @@ export const saveSchedule = async (schedule: Schedule): Promise<Schedule> => {
         throw new Error(data.detail);
     }
     return data;
+};
+
+export const isSameSchedule = (schedule1: Schedule, schedule2: Schedule): boolean => {
+    return schedule1.name === schedule2.name &&
+        schedule1.start_time === schedule2.start_time &&
+        schedule1.end_time === schedule2.end_time &&
+        schedule1.active_days === schedule2.active_days &&
+        schedule1.tasks === schedule2.tasks &&
+        schedule1.mandatory_tasks === schedule2.mandatory_tasks;
 };
 
 export const createEmptyTask = (): Task => {
