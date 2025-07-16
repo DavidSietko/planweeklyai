@@ -23,6 +23,7 @@ export default function DashboardPage() {
     const fetchSchedule = async () => {
       try {
         const data = await getSchedule();
+        data.time_zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         setSchedule(data);
       } catch (err: any) {
         const msg = err.message || 'Failed to load schedule';

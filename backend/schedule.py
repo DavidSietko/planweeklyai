@@ -91,8 +91,8 @@ def get_schedule(request: Request):
     if not schedule:
         # create a new schedule with proper PostgreSQL types matching frontend structure
         cursor.execute("""INSERT INTO schedules (
-    user_id, name, start_time, end_time, active_days, tasks, mandatory_tasks, created_at, updated_at )
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
+    user_id, name, start_time, end_time, active_days, tasks, mandatory_tasks, created_at, updated_at, time_zone )
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
     (
         user_id, 
         "My Schedule",
@@ -102,7 +102,8 @@ def get_schedule(request: Request):
         format_tasks_for_db([]),
         format_mandatory_tasks_for_db([]),
         get_current_timestamp(),
-        get_current_timestamp()
+        get_current_timestamp(),
+        "America/New_York"
     ))
         conn.commit()
         cursor.execute("SELECT * FROM schedules WHERE user_id = %s", (user_id,))
@@ -129,18 +130,21 @@ async def save_schedule(request: Request):
     active_days = data.get("active_days")
     tasks = data.get("tasks")
     mandatory_tasks = data.get("mandatory_tasks")
+    time_zone = data.get("time_zone")
 
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-    cursor.execute("""UPDATE schedules SET name = %s, start_time = %s, end_time = %s, active_days = %s, tasks = %s, mandatory_tasks = %s, updated_at = %s WHERE user_id = %s""",
+    cursor.execute("""UPDATE schedules SET name = %s, start_time = %s, end_time = %s, active_days = %s, tasks = %s, mandatory_tasks = %s, updated_at = %s, time_zone = %s WHERE user_id = %s""",
     (name, 
     start_time, 
     end_time, 
     format_active_days_for_db(active_days),
     format_tasks_for_db(tasks),
     format_mandatory_tasks_for_db(mandatory_tasks),
-    get_current_timestamp(), user_id))
+    get_current_timestamp(),
+    time_zone,
+    user_id))
 
     conn.commit()
     cursor.close()
