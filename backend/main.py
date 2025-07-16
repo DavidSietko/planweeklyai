@@ -3,8 +3,9 @@ from dotenv import load_dotenv
 from starlette.middleware.sessions import SessionMiddleware
 from auth import router as auth_router
 from schedule import router as schedule_router
-import os
+from generate import router as generate_router
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 load_dotenv()
 
@@ -22,3 +23,4 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(schedule_router)
+app.include_router(generate_router)
