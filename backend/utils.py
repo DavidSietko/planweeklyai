@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import Request
 from fastapi.responses import RedirectResponse
+import requests
 
 load_dotenv()
 
@@ -55,7 +56,8 @@ def get_user_id(request: Request):
     return payload.get("user_id")
 
 # returns the email from the token, from field email
-def get_email(token: str | None):
+def get_email(request: Request):
+    token = get_token(request)
     if not token:
         raise HTTPException(status_code=401, detail="No token provided. Please log in again.s")
     payload = decode_token(token)
@@ -69,3 +71,17 @@ def get_db_connection():
         port=os.getenv("port"),
         dbname=os.getenv("dbname")
     )
+
+def refresh_access_token(refresh_token):
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+    token_url = "https://oauth2.googleapis.com/token"   
+    data = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "refresh_token": refresh_token,
+        "grant_type": "refresh_token"
+    }
+    response = requests.post(token_url, data=data)
+    response.raise_for_status()
+    return response.json()  # Contains 'access_token', 'expires_in', etc.
