@@ -47,7 +47,8 @@ def decode_token(token: str):
         raise HTTPException(status_code=401, detail="Invalid token. Please log in again.")
 
 # returns the user_id from the token, from field user_id
-def get_user_id(token: str | None):
+def get_user_id(request: Request):
+    token = get_token(request)
     if not token:
         raise HTTPException(status_code=401, detail="No token provided. Please log in again.")
     payload = decode_token(token)

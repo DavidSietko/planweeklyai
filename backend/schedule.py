@@ -70,10 +70,7 @@ def time_to_str(val):
 
 @router.get("/schedule/get")
 def get_schedule(request: Request):
-    cookie_token = get_token(request)
-    if not cookie_token:
-        raise HTTPException(status_code=401, detail="Not authenticated. Please log in.")
-    user_id = get_user_id(cookie_token)
+    user_id = get_user_id(request)
     if not user_id:
         raise HTTPException(status_code=401, detail="There was an error logging in. Please log in again.")
     
@@ -118,8 +115,7 @@ def get_schedule(request: Request):
 
 @router.post("/schedule/save")
 async def save_schedule(request: Request):
-    cookie_token = get_token(request)
-    user_id = get_user_id(cookie_token)
+    user_id = get_user_id(request)
     if not user_id:
         raise HTTPException(status_code=401, detail="Not logged in. Please log in again")#
 

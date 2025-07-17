@@ -10,7 +10,8 @@ load_dotenv()
 router = APIRouter()
 
 @router.get("/generate/schedule")
-def generate_schedule():
+def generate_schedule(request: Request):
+    user_schedule = request.json()
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=getenv("OPENROUTER_API_KEY")
