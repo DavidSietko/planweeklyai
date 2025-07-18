@@ -38,7 +38,8 @@ def generate_schedule(request: Request):
         if not token:
             raise HTTPException(status_code=401, detail="Failed to refresh access token. Please log in again.")
         access_token = token["access_token"]
-        cursor.execute("UPDATE users SET access_token = %s, token_expiry = %s WHERE id = %s", (access_token, token["expires_in"], user_id))
+        token_expiry = datetime.now(timezone.utc) + timedelta(seconds=token["expires_in"])
+        cursor.execute("UPDATE users SET access_token = %s, token_expiry = %s WHERE id = %s", (access_token, token_expiry, user_id))
     conn.commit()
     
     time_zone = schedule["time_zone"]
@@ -60,9 +61,10 @@ You are an AI scheduling assistant. The user has designed a preferred weekly sch
 Your job is to generate a new weekly schedule for the user, in JSON format, that:
 - Includes all mandatory tasks at their specified times.
 - Schedules as many preferred tasks as possible, respecting their frequency, preferred time of day, and priority.
-- Avoids conflicts with existing Google Calendar events (do not overlap).
+- Avoids conflicts with existing Google Calendar events (MAKE SURE THAT THE SCHEDULE DOES NOT OVERLAP WITH ANY EXISTING EVENTS).
 - Fills the week as efficiently as possible, but does not double-book any time slots.
 - All times should be in the user's time zone: {time_zone}.
+- Make sure that the events you generate DO NOT OVERLAP WITH EACH OTHER.
 
 Here is the user's designed schedule (in JSON):
 {user_schedule_json}
