@@ -60,9 +60,7 @@ export default function DashboardPage() {
   };
 
   const handleGenerateSchedule = () => {
-    // TODO: Implement schedule generation logic
-    console.log('Generating schedule...');
-    alert('Schedule generation feature coming soon!');
+    router.push('/schedule');
   };
 
   const toggleSidebar = () => {

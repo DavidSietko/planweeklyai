@@ -10,10 +10,14 @@ export default function SchedulePage() {
 
     useEffect(() => {
         const fetchSchedule = async () => {
-            const response = await fetch(`${process.env.PUBLIC_API_URL}/generate/schedule`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/generate/schedule`, {
+                method: 'GET',
+                credentials: 'include',
+            });
             const data = await response.json();
             if(!response.ok) {
                 setError(true);
+                console.log(data.detail);
             
             }
             else {

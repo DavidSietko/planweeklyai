@@ -91,6 +91,9 @@ export const saveSchedule = async (schedule: Schedule): Promise<Schedule> => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/schedule/save`, {
         method: 'POST',
         credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
             name: schedule.name,
             start_time: schedule.start_time,

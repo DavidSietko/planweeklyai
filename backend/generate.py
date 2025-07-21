@@ -123,7 +123,6 @@ OUTPUT ONLY THE JSON ARRAY. NO EXPLANATIONS, NO COMMENTS, NO APOLOGIES, ONLY VAL
         ]
     )
     response_text = completion.choices[0].message.content
-    print("AI response:", repr(response_text))
     if not response_text:
         raise HTTPException(status_code=500, detail="Failed to generate schedule. Please try again.")
 
