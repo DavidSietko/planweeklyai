@@ -2,6 +2,7 @@
 
 import {useState, useEffect} from 'react';
 import { Event } from '../../utils/interfaces';
+import WeeklyEventsView from '../../components/WeeklyEventsView';
 
 export default function SchedulePage() {
     const [events, setEvents] = useState<Event[]>([]);
@@ -36,12 +37,6 @@ export default function SchedulePage() {
         return <div>Sorry. We had trouble generating your schedule. Please try again later.</div>;
     }
     else {
-        return <div>{events.map((event) => (
-            <div key={event.id}>
-                <h2>{event.summary}</h2>
-                <p>{event.start.dateTime}</p>
-                <p>{event.end.dateTime}</p>
-            </div>
-        ))}</div>;
+        return <WeeklyEventsView events={events} />;
     }
 }
