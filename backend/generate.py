@@ -56,23 +56,58 @@ def generate_schedule(request: Request):
     google_events_json = json.dumps(events, default=str)
 
     prompt = f"""
-You are an AI scheduling assistant. The user has designed a preferred weekly schedule with tasks and mandatory tasks, and already has some events in their Google Calendar for this week.
+You are an advanced AI scheduling assistant tasked with creating an optimal weekly schedule while strictly avoiding all conflicts. The user has provided their ideal weekly schedule template and their existing Google Calendar events.
 
-Your job is to generate a new weekly schedule for the user, in JSON format, that:
-- Includes all mandatory tasks at their specified times.
-- Schedules as many preferred tasks as possible, respecting their frequency, preferred time of day, and priority.
-- Avoids conflicts with existing Google Calendar events (MAKE SURE THAT THE SCHEDULE DOES NOT OVERLAP WITH ANY EXISTING EVENTS).
-- Fills the week as efficiently as possible, but does not double-book any time slots.
-- All times should be in the user's time zone: {time_zone}.
-- Make sure that the events you generate DO NOT OVERLAP WITH EACH OTHER.
+YOUR PRIMARY OBJECTIVES (IN ORDER OF IMPORTANCE):
+1. MUST include ALL mandatory tasks at their exact specified times (no changes allowed)
+2. MUST avoid ALL conflicts with existing Google Calendar events (absolute priority)
+3. Schedule preferred tasks according to their:
+   - Priority (higher first)
+   - Preferred time windows
+   - Frequency requirements
+4. NEVER double-book any time slots
+5. Maintain reasonable breaks between tasks when possible
 
-Here is the user's designed schedule (in JSON):
+STRICT REQUIREMENTS:
+- All times must be in {time_zone} timezone
+- Each event must have buffer time (at least 15 minutes between events unless otherwise specified)
+- If a preferred task cannot be scheduled without conflict, it should be skipped (do not force it)
+- Absolutely NO overlapping events (cross-validate all events against each other and existing events)
+- For recurring tasks, ensure ALL instances comply with the rules
+
+INPUT DATA:
+1. User's ideal schedule template (JSON):
 {user_schedule_json}
 
-Here are the user's existing Google Calendar events for this week (in JSON):
+2. Existing Google Calendar events this week (JSON):
 {google_events_json}
 
-Output only STRICTLY a JSON array of Google Calendar event objects .NOTHING ELSE, each with: summary, description (if any), location (if any), start (with dateTime and timeZone), and end (with dateTime and timeZone).
+OUTPUT REQUIREMENTS:
+- Generate ONLY a valid JSON array of event objects
+- Each event MUST include:
+  * summary (string)
+  * description (string, optional)
+  * location (string, optional)
+  * start (object with dateTime in ISO8601 and timeZone)
+  * end (object with dateTime in ISO8601 and timeZone)
+- Events should be ordered chronologically in the array
+- Include ONLY new events to be added (do not include existing events)
+- If no valid schedule can be created without conflicts, return an empty array
+
+VALIDATION STEPS YOU MUST PERFORM:
+1. First place all mandatory events at their fixed times
+2. Then add existing calendar events as immutable blocks
+3. For preferred tasks:
+   a. Sort by priority (highest first)
+   b. For each task, find the first available slot that:
+      - Matches preferred time window
+      - Doesn't conflict with mandatory/existing events
+      - Has sufficient duration
+      - Maintains buffer time
+4. Double-check no events overlap (start < end of previous event)
+5. Verify all timezones are correctly set to {time_zone}
+
+OUTPUT ONLY THE JSON ARRAY. NO EXPLANATIONS, NO COMMENTS, NO APOLOGIES, ONLY VALID JSON.
 """
 
     completion = client.chat.completions.create(
