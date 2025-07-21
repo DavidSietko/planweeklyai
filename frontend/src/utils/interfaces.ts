@@ -73,3 +73,19 @@ export interface DaySchedule {
     tasks: Task[];
     mandatory_tasks: MandatoryTask[];
 }
+
+
+export interface Event {
+    summary: string;
+    start: {
+        dateTime: string;
+        timeZone: string;
+    };
+    end: {
+        dateTime: string;
+        timeZone: string;
+    };
+    id: string;
+    location?: string;
+    description?: string;
+}
