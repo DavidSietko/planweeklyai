@@ -70,7 +70,7 @@ YOUR PRIMARY OBJECTIVES (IN ORDER OF IMPORTANCE):
 
 STRICT REQUIREMENTS:
 - All times must be in {time_zone} timezone
-- Each event must have buffer time (at least 15 minutes between events unless otherwise specified)
+- Each event must have buffer time (at least 30 minutes between events unless otherwise specified)
 - If a preferred task cannot be scheduled without conflict, it should be skipped (do not force it)
 - Absolutely NO overlapping events (cross-validate all events against each other and existing events)
 - For recurring tasks, ensure ALL instances comply with the rules
@@ -90,9 +90,11 @@ OUTPUT REQUIREMENTS:
   * location (string, optional)
   * start (object with dateTime in ISO8601 and timeZone)
   * end (object with dateTime in ISO8601 and timeZone)
+- ONLY include these fields in a given event
 - Events should be ordered chronologically in the array
 - Include ONLY new events to be added (do not include existing events)
 - If no valid schedule can be created without conflicts, return an empty array
+- Schedule tasks on the weekend if possible
 
 VALIDATION STEPS YOU MUST PERFORM:
 1. First place all mandatory events at their fixed times
@@ -127,7 +129,8 @@ OUTPUT ONLY THE JSON ARRAY. NO EXPLANATIONS, NO COMMENTS, NO APOLOGIES, ONLY VAL
 
     events = json.loads(response_text)
 
-    print(f"events: {events}")
+    conn.commit()
+    conn.close()
     return events
 
 def get_google_calendar_events(access_token, time_zone):
