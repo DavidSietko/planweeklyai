@@ -11,21 +11,24 @@ export default function SchedulePage() {
 
     useEffect(() => {
         const fetchSchedule = async () => {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/generate/schedule`, {
-                method: 'GET',
-                credentials: 'include',
-            });
-            const data = await response.json();
-            if(!response.ok) {
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/generate/schedule`, {
+                    method: 'GET',
+                    credentials: 'include',
+                });
+                const data = await response.json();
+                if(!response.ok) {
+                    throw new Error(data.detail);
+                }
+                else {
+                    setEvents(data);
+                    console.log(events);
+                }
+                setLoading(false);
+            } catch (error) {
                 setError(true);
-                console.log(data.detail);
-            
+                console.error('Error fetching schedule:', error);
             }
-            else {
-                setEvents(data);
-                console.log(events);
-            }
-            setLoading(false);
         }
         fetchSchedule();
     }, []);

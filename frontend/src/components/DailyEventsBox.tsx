@@ -18,11 +18,11 @@ function formatDate(dateStr: string) {
 
 const DailyEventsBox: React.FC<DailyEventsBoxProps> = ({ date, events }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 min-w-[280px] max-w-xs flex-1 h-full flex flex-col justify-start overflow-y-auto">
-      <h2 className="text-xl font-bold mb-4 text-blue-700 sticky top-0 bg-white z-10 pb-2">{formatDate(date)}</h2>
+    <div className="bg-white rounded-lg shadow-md p-4 w-[240px] min-w-[180px] max-w-[280px] flex-1 h-full flex flex-col justify-start overflow-y-auto snap-center">
+      <h2 className="text-lg font-bold mb-4 text-blue-700 sticky top-0 bg-white z-10 pb-2">{formatDate(date)}</h2>
       <div className="space-y-4">
-        {events.map(event => (
-          <div key={event.id} className="border-l-4 border-blue-400 pl-3 py-2 bg-blue-50 rounded">
+        {events.map((event, index) => (
+          <div key={index} className="border-l-4 border-blue-400 pl-3 py-2 bg-blue-50 rounded">
             <div className="font-semibold text-gray-900">{event.summary}</div>
             <div className="text-sm text-gray-700">
               {formatTime(event.start.dateTime)} - {formatTime(event.end.dateTime)}

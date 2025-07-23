@@ -21,13 +21,29 @@ const WeeklyEventsView: React.FC<WeeklyEventsViewProps> = ({ events }) => {
   const sortedDates = Object.keys(grouped).sort();
 
   return (
-    <div className="w-full flex justify-center items-start">
-      <div className="flex gap-6 py-8 px-2 w-full max-w-full overflow-x-auto justify-center items-start scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-blue-50">
-        {sortedDates.map(date => (
-          <div key={date} className="flex-shrink-0 h-[90vh] flex items-stretch">
-            <DailyEventsBox date={date} events={grouped[date]} />
-          </div>
-        ))}
+    <div className="w-full min-w-0 flex flex-col items-center justify-center overflow-x-auto">
+      <div className="w-full min-w-0 flex justify-center items-center">
+        <div className="flex gap-4 scroll-pl-4 pr-4 py-4 w-max h-[85vh] overflow-x-auto justify-start items-center scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-blue-50 snap-x snap-mandatory">
+          {sortedDates.map(date => (
+            <div key={date} className="flex-shrink-0 h-full flex items-stretch snap-center">
+              <DailyEventsBox date={date} events={grouped[date]} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-4 mt-6 mb-2 justify-center">
+        <button
+          className="px-6 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition"
+          onClick={() => { /* TODO: Implement re-generate logic */ }}
+        >
+          Re-generate
+        </button>
+        <button
+          className="px-6 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition"
+          onClick={() => { /* TODO: Implement sync logic */ }}
+        >
+          Sync
+        </button>
       </div>
     </div>
   );
