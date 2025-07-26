@@ -4,6 +4,7 @@ import DailyEventsBox from '../components/DailyEventsBox';
 
 interface WeeklyEventsViewProps {
   events: Event[];
+  generateSchedule: () => Promise<void>;
 }
 
 // Helper to group events by date (YYYY-MM-DD)
@@ -16,7 +17,7 @@ function groupEventsByDay(events: Event[]) {
   }, {} as Record<string, Event[]>);
 }
 
-const WeeklyEventsView: React.FC<WeeklyEventsViewProps> = ({ events }) => {
+const WeeklyEventsView: React.FC<WeeklyEventsViewProps> = ({ events, generateSchedule }) => {
   const grouped = groupEventsByDay(events);
   const sortedDates = Object.keys(grouped).sort();
 
@@ -34,7 +35,7 @@ const WeeklyEventsView: React.FC<WeeklyEventsViewProps> = ({ events }) => {
       <div className="flex gap-4 mt-6 mb-2 justify-center">
         <button
           className="px-6 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition"
-          onClick={() => { /* TODO: Implement re-generate logic */ }}
+          onClick={() => { generateSchedule }}
         >
           Re-generate
         </button>

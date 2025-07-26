@@ -11,9 +11,22 @@ export default function SchedulePage() {
     const [errorMessage, setErrorMessage] = useState<string>('');
 
     useEffect(() => {
-        const fetchSchedule = async () => {
-            try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/generate/schedule`, {
+        // try get schedule from cache
+        const cacheEvents = sessionStorage.getItem("events");
+        if(!cacheEvents) {
+            generateSchedule();
+        }
+        else {
+            setEvents(JSON.parse(cacheEvents));
+        }
+    }, []);
+
+
+    const generateSchedule = async () => {
+        try {
+            // set loading part to true
+            setLoading(true);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/generate/schedule`, {
                     method: 'GET',
                     credentials: 'include',
                 });
@@ -24,7 +37,7 @@ export default function SchedulePage() {
                 }
                 else {
                     setEvents(data);
-                    console.log(events);
+                    sessionStorage.setItem("events", JSON.stringify(data));
                 }
                 setLoading(false);
             } catch (error : unknown) {
@@ -42,8 +55,6 @@ export default function SchedulePage() {
                 }
             }
         }
-        fetchSchedule();
-    }, []);
 
     if(loading) {
         return (
@@ -69,6 +80,6 @@ export default function SchedulePage() {
         );
     }
     else {
-        return <WeeklyEventsView events={events} />;
+        return <WeeklyEventsView events={events} generateSchedule={generateSchedule} />;
     }
 }
