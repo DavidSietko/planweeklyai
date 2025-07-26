@@ -128,6 +128,6 @@ export default function SchedulePage() {
         );
     }
     else {
-        return <WeeklyEventsView events={events} generateSchedule={generateSchedule} />;
+        return <WeeklyEventsView events={events} generateSchedule={generateSchedule} syncSchedule={syncSchedule} />;
     }
 }

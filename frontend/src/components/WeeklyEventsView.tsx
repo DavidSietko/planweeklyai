@@ -5,6 +5,7 @@ import DailyEventsBox from '../components/DailyEventsBox';
 interface WeeklyEventsViewProps {
   events: Event[];
   generateSchedule: () => Promise<void>;
+  syncSchedule: () => Promise<void>;
 }
 
 // Helper to group events by date (YYYY-MM-DD)
@@ -17,7 +18,7 @@ function groupEventsByDay(events: Event[]) {
   }, {} as Record<string, Event[]>);
 }
 
-const WeeklyEventsView: React.FC<WeeklyEventsViewProps> = ({ events, generateSchedule }) => {
+const WeeklyEventsView: React.FC<WeeklyEventsViewProps> = ({ events, generateSchedule, syncSchedule }) => {
   const grouped = groupEventsByDay(events);
   const sortedDates = Object.keys(grouped).sort();
 
@@ -41,7 +42,7 @@ const WeeklyEventsView: React.FC<WeeklyEventsViewProps> = ({ events, generateSch
         </button>
         <button
           className="px-6 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 transition"
-          onClick={() => { /* TODO: Implement sync logic */ }}
+          onClick={() => {syncSchedule()}}
         >
           Sync
         </button>

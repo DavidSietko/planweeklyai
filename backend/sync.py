@@ -1,6 +1,6 @@
-from curses import OK
-from fastapi import APIRouter, Request, HTTPException, status
+from fastapi import APIRouter, Request, HTTPException
 from dotenv import load_dotenv
+from psycopg2.extras import RealDictCursor
 import requests
 from utils import get_db_connection, get_user_id, refresh_access_token
 from datetime import datetime, timedelta, timezone
@@ -17,7 +17,7 @@ async def sync_schedule(request: Request):
 
     # Get user's access token from DB
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     if not user:
@@ -44,7 +44,7 @@ async def sync_schedule(request: Request):
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
-    
+
     for event in events:
         response = requests.post(url, headers=headers, json=event)
         if not response.ok:
