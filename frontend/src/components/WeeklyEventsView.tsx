@@ -35,7 +35,7 @@ const WeeklyEventsView: React.FC<WeeklyEventsViewProps> = ({ events, generateSch
       <div className="flex gap-4 mt-6 mb-2 justify-center">
         <button
           className="px-6 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition"
-          onClick={() => { generateSchedule }}
+          onClick={() => { generateSchedule()}}
         >
           Re-generate
         </button>
