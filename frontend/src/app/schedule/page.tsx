@@ -10,6 +10,9 @@ export default function SchedulePage() {
     const [error, setError] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>('');
 
+    const [syncing, setSyncing] = useState<boolean>(false);
+    const [success, setSuccess] = useState<boolean>(false);
+
     useEffect(() => {
         // try get schedule from cache
         const cacheEvents = sessionStorage.getItem("events");
@@ -57,6 +60,40 @@ export default function SchedulePage() {
             }
         }
 
+    const syncSchedule = async() => {
+        try {
+            setSyncing(true);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/sync/schedule`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify(events)
+            });
+            
+            const data = await response.json();
+            if(!response.ok) {
+                throw new Error(data.detail);
+            }
+            setSuccess(true);
+            setSyncing(false);
+        } catch(error: unknown) {
+            setError(true);
+            if(error instanceof Error) {
+                if(error.message && error.message.includes("log in")) {
+                    setErrorMessage("Looks like you're not logged in. Please log in to continue.");
+                }
+                else {
+                    setErrorMessage(error.message);
+                }
+            }
+            else {
+                setErrorMessage("Sorry. We had trouble syncing your schedule. Please try again later.");
+            }
+        }
+    }
+
     if(loading) {
         return (
             <div className="flex justify-center items-center h-[60vh]">
@@ -78,6 +115,16 @@ export default function SchedulePage() {
                     <div>{errorMessage}</div>
                 </div>
             </div>
+        );
+    }
+    else if(syncing) {
+        return (
+            <div>SYNCING CALENDER</div>
+        );
+    }
+    else if(success) {
+        return (
+            <div>SYNC SUCCESSFULL. YOU MAY CLOSE THIS TAB AND CHECK YOUR GOOGLE CALENDER</div>
         );
     }
     else {
