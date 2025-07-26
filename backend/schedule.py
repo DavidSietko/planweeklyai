@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi import Request
 from fastapi import HTTPException
-from utils import get_user_id, get_token, get_db_connection
+from utils import get_user_id, get_db_connection
 from psycopg2.extras import RealDictCursor
 from datetime import datetime, time, timezone
 import json
