@@ -91,6 +91,9 @@ export const saveSchedule = async (schedule: Schedule): Promise<Schedule> => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/schedule/save`, {
         method: 'POST',
         credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
             name: schedule.name,
             start_time: schedule.start_time,
@@ -98,7 +101,8 @@ export const saveSchedule = async (schedule: Schedule): Promise<Schedule> => {
             active_days: schedule.active_days,
             tasks: schedule.tasks,
             mandatory_tasks: schedule.mandatory_tasks,
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            time_zone: schedule.time_zone
         })
     });
     const data = await response.json();
@@ -114,7 +118,8 @@ export const isSameSchedule = (schedule1: Schedule, schedule2: Schedule): boolea
         schedule1.end_time === schedule2.end_time &&
         schedule1.active_days === schedule2.active_days &&
         schedule1.tasks === schedule2.tasks &&
-        schedule1.mandatory_tasks === schedule2.mandatory_tasks;
+        schedule1.mandatory_tasks === schedule2.mandatory_tasks &&
+        schedule1.time_zone === schedule2.time_zone;
 };
 
 export const createEmptyTask = (): Task => {

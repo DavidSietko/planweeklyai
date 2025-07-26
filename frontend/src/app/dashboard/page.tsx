@@ -23,6 +23,7 @@ export default function DashboardPage() {
     const fetchSchedule = async () => {
       try {
         const data = await getSchedule();
+        data.time_zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         setSchedule(data);
       } catch (err: any) {
         const msg = err.message || 'Failed to load schedule';
@@ -59,9 +60,7 @@ export default function DashboardPage() {
   };
 
   const handleGenerateSchedule = () => {
-    // TODO: Implement schedule generation logic
-    console.log('Generating schedule...');
-    alert('Schedule generation feature coming soon!');
+    router.push('/schedule');
   };
 
   const toggleSidebar = () => {

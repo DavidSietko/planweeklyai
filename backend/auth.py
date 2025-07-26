@@ -17,23 +17,18 @@ SCOPES = [
 
 @router.get("/auth/login")
 def login(request: Request):
-    # see if the user is already logged in
-    token = get_token(request)
-    if not token:
-        raise HTTPException(status_code=401, detail="No token provided. Please log in again.")
+    user_id = get_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not found. Please log in again.")
     else:
-        user_id = get_user_id(token)
-        if not user_id:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        if not user:
             raise HTTPException(status_code=401, detail="User not found. Please log in again.")
         else:
-            conn = get_db_connection()
-            cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-            user = cursor.fetchone()
-            if not user:
-                raise HTTPException(status_code=401, detail="User not found. Please log in again.")
-            else:
-                return {"message": "Login successfull"}
+            return {"message": "Login successfull"}
 
 @router.get("/auth/google/login")
 def google_login(request: Request):

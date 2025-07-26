@@ -37,6 +37,7 @@ export interface MandatoryTask {
 export interface Schedule {
     id: string;
     name: string; // User-friendly name like "Work Schedule" or "Weekday Routine"
+    time_zone: string;
     start_time: string; // Format: "HH:MM" (24-hour) - daily start time
     end_time: string;   // Format: "HH:MM" (24-hour) - daily end time
     active_days: Day[]; // Which days this schedule applies to
@@ -71,4 +72,20 @@ export interface DaySchedule {
     end_time: string;
     tasks: Task[];
     mandatory_tasks: MandatoryTask[];
+}
+
+
+export interface Event {
+    summary: string;
+    start: {
+        dateTime: string;
+        timeZone: string;
+    };
+    end: {
+        dateTime: string;
+        timeZone: string;
+    };
+    id: string;
+    location?: string;
+    description?: string;
 }
