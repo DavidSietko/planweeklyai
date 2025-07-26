@@ -18,6 +18,7 @@ export default function SchedulePage() {
         }
         else {
             setEvents(JSON.parse(cacheEvents));
+            setLoading(false);
         }
     }, []);
 
