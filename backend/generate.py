@@ -67,6 +67,7 @@ YOUR PRIMARY OBJECTIVES (IN ORDER OF IMPORTANCE):
    - Frequency requirements
 4. NEVER double-book any time slots
 5. Maintain reasonable breaks between tasks when possible
+6. MAKE SURE THE SCHEDULE IS FOR THE CURRENT WEEK starting from {datetime.now()}
 
 STRICT REQUIREMENTS:
 - All times must be in {time_zone} timezone
@@ -126,10 +127,13 @@ OUTPUT ONLY THE JSON ARRAY. NO EXPLANATIONS, NO COMMENTS, NO APOLOGIES, ONLY VAL
     if not response_text:
         raise HTTPException(status_code=500, detail="Failed to generate schedule. Please try again.")
 
-    events = json.loads(response_text)
-
     conn.commit()
     conn.close()
+    try:
+        events = json.loads(response_text)
+    except:
+        raise HTTPException(status_code=400, detail="Error generating your schedule. Please try again");
+
     return events
 
 def get_google_calendar_events(access_token, time_zone):
