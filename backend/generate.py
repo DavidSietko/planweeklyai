@@ -67,7 +67,7 @@ YOUR PRIMARY OBJECTIVES (IN ORDER OF IMPORTANCE):
    - Frequency requirements
 4. NEVER double-book any time slots
 5. Maintain reasonable breaks between tasks when possible
-6. MAKE SURE THE SCHEDULE IS FOR THE CURRENT WEEK starting from {datetime.now()}
+6. MAKE SURE THE SCHEDULE IS FOR THE CURRENT WEEK starting from {datetime.now()} UNTIL THE END OF THIS WEEK
 
 STRICT REQUIREMENTS:
 - All times must be in {time_zone} timezone
@@ -110,19 +110,23 @@ VALIDATION STEPS YOU MUST PERFORM:
 4. Double-check no events overlap (start < end of previous event)
 5. Verify all timezones are correctly set to {time_zone}
 
-OUTPUT ONLY THE JSON ARRAY. NO EXPLANATIONS, NO COMMENTS, NO APOLOGIES, ONLY VALID JSON.
+OUTPUT ONLY THE JSON ARRAY. NO EXPLANATIONS, NO COMMENTS, NO APOLOGIES, ONLY VALID JSON IN THE FORMAT SPECIFIED ABOVE.
 """
 
-    completion = client.chat.completions.create(
-        extra_body={},
-        model="moonshotai/kimi-k2:free",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
+    try:
+        completion = client.chat.completions.create(
+            extra_body={},
+            model="moonshotai/kimi-k2:free",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+    except:
+        raise HTTPException(status_code=429, detail="The AI is currently down. Please try again later")
+        
     response_text = completion.choices[0].message.content
     if not response_text:
         raise HTTPException(status_code=500, detail="Failed to generate schedule. Please try again.")
