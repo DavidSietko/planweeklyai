@@ -21,6 +21,9 @@ export default function DashboardPage() {
 
   const [deletePopupOpen, setDeletePopupOpen] = useState<boolean>(false);
 
+  const [logoutError, setLogoutError] = useState<boolean>(false);
+  const [logoutMessage, setLogoutMessage] = useState<String>("");
+
   useEffect(() => {
     const fetchSchedule = async () => {
       try {
@@ -61,8 +64,27 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async() => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+          method: 'GET',
+          credentials: 'include',
+      });
 
+      if(!response.ok && response.status !== 302 && response.status !== 307) {
+        throw new Error("We are having trouble logging you out. Please try again later");
+      }
+      router.push("/login");
+
+    } catch (error: unknown) {
+      if(error instanceof Error) {
+        setLogoutError(true);
+        setLogoutMessage(error.message);
+        setTimeout(() => {
+          setLogoutError(false);
+        }, 2000);
+      }
+    }
   }
 
   const deleteAccount = () => {
@@ -127,6 +149,11 @@ export default function DashboardPage() {
             >
               Delete Account
             </button>
+            {logoutError && (
+                  <div className="bg-red-50 border border-red-300 text-black px-3 py-2 rounded-lg text-sm">
+                    <p>{logoutMessage}</p>
+                  </div>
+                )}
           </div>
         </div>
       </div>

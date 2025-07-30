@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 import google_auth_oauthlib.flow
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -28,7 +28,7 @@ def login(request: Request):
         if not user:
             raise HTTPException(status_code=401, detail="User not found. Please log in again.")
         else:
-            return {"message": "Login successfull"}
+            return {"message": "Login successful"}
 
 @router.get("/auth/google/login")
 def google_login(request: Request):
@@ -156,3 +156,22 @@ def google_callback(request: Request):
     except Exception as e:
         print("DB Error:", e)
         return {"error": "Failed to process user info"}
+
+
+
+@router.get("/auth/logout")
+def logout():
+    response = JSONResponse(content={"message": "Logged out successfully"})
+    
+    # Delete the token cookie
+    response.set_cookie(
+        key="token",
+        value="",
+        expires=0,
+        max_age=0,
+        httponly=True,
+        secure=True,
+        samesite="lax"
+    )
+    
+    return response
