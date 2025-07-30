@@ -19,6 +19,8 @@ export default function DashboardPage() {
   const [noChange, setNoChange] = useState<boolean>(false);
   const router = useRouter();
 
+  const [deletePopupOpen, setDeletePopupOpen] = useState<boolean>(false);
+
   useEffect(() => {
     const fetchSchedule = async () => {
       try {
@@ -59,6 +61,10 @@ export default function DashboardPage() {
     }
   };
 
+  const handleLogout = () => {
+
+  }
+
   const handleGenerateSchedule = () => {
     router.push('/schedule');
   };
@@ -89,12 +95,33 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Menu</h2>
-          <div className="space-y-2">
-            <div className="p-3 bg-gray-100 rounded-md">
-              <p className="text-gray-600">Sidebar content coming soon...</p>
-            </div>
+        <div className="p-6 h-full flex flex-col">
+          <h2 className="text-xl font-semibold text-gray-800 mb-8">Menu</h2>
+          <div className="flex flex-col space-y-4 flex-1">
+            <button 
+              className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
+              onClick={() => router.push("/")}
+            >
+              Home
+            </button>
+            <button 
+              className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
+              onClick={() => router.push("/login")}
+            >
+              Login
+            </button>
+            <button 
+              className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+            <button 
+              className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
+              onClick={() => setDeletePopupOpen(true)}
+            >
+              Delete Account
+            </button>
           </div>
         </div>
       </div>
