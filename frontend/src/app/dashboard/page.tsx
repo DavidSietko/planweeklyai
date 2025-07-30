@@ -65,6 +65,11 @@ export default function DashboardPage() {
 
   }
 
+  const deleteAccount = () => {
+    setSidebarOpen(false);
+    setDeletePopupOpen(true);
+  }
+
   const handleGenerateSchedule = () => {
     router.push('/schedule');
   };
@@ -118,7 +123,7 @@ export default function DashboardPage() {
             </button>
             <button 
               className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
-              onClick={() => setDeletePopupOpen(true)}
+              onClick={deleteAccount}
             >
               Delete Account
             </button>
@@ -133,6 +138,35 @@ export default function DashboardPage() {
           onClick={toggleSidebar}
         />
       )}
+
+      {/* Overlay for Delete Account popup */}
+      {
+        deletePopupOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" onClick={() => setDeletePopupOpen(false)}>
+            <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-red-600 mb-4">⚠️ WARNING</h3>
+                <p className="text-gray-700 mb-2 font-medium">This action will PERMANENTLY delete your account</p>
+                <p className="text-gray-600">Are you sure you want to proceed?</p>
+              </div>
+              <div className="flex justify-center space-x-4">
+                <button 
+                  onClick={() => setDeletePopupOpen(false)}
+                  className="px-6 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={deleteAccount}
+                  className="px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg hover:from-red-600 hover:to-red-700 transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300 focus:ring-opacity-50"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>   
+        )
+      }
 
       {/* Main Content */}
       <div className="flex-1">
