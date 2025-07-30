@@ -175,3 +175,31 @@ def logout():
     )
     
     return response
+
+@router.delete("/auth/delete/account")
+def delete_account(request: Request):
+    user_id = get_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Looks like you are not logged in. Please log in before deleting your account.")
+    
+    # Delete user from database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    conn.commit()
+    conn.close()
+    
+    response = JSONResponse(content={"message": "Account deleted successfully"})
+    
+    # Delete the token cookie
+    response.set_cookie(
+        key="token",
+        value="",
+        expires=0,
+        max_age=0,
+        httponly=True,
+        secure=True,
+        samesite="lax"
+    )
+    
+    return response
