@@ -20,9 +20,11 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [deletePopupOpen, setDeletePopupOpen] = useState<boolean>(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string>("");
+  const [deleteError, setDeleteError] = useState<boolean>(false);
 
   const [logoutError, setLogoutError] = useState<boolean>(false);
-  const [logoutMessage, setLogoutMessage] = useState<String>("");
+  const [logoutMessage, setLogoutMessage] = useState<string>("");
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -87,9 +89,48 @@ export default function DashboardPage() {
     }
   }
 
-  const deleteAccount = () => {
+  const openDeletePopup = () => {
     setSidebarOpen(false);
     setDeletePopupOpen(true);
+  }
+
+  const deleteAccount = async() => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/delete/account`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+
+      const data = await response.json();
+      if(!response.ok) {
+        const message: string = data.detail;
+        if(message.includes("Failed to fetch")) {
+          throw new Error("We are having trouble deleting your account. Please try again later");
+        }
+        else if(message.includes("log in")) {
+          throw new Error("Looks like you are not logged in. Please log in before trying to delete your account");
+        }
+        else {
+          throw new Error("We are having trouble deleting your account. Please try again later.");
+        }
+      }
+      router.push("/");
+    } catch(error: unknown) {
+      setDeleteError(true);
+      if(error instanceof Error) {
+        if(error.message.includes("Failed to fetch")) {
+          setDeleteErrorMessage("We are having trouble deleting your account. Please try again later");
+        }
+        else {
+          setDeleteErrorMessage(error.message);
+        }
+      }
+      else {
+        setDeleteErrorMessage("We are experiencing difficulties with deleting your account. Try again later.");
+      }
+
+      setTimeout(() => setDeleteError(false), 2000);
+    }
   }
 
   const handleGenerateSchedule = () => {
@@ -145,7 +186,7 @@ export default function DashboardPage() {
             </button>
             <button 
               className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
-              onClick={deleteAccount}
+              onClick={openDeletePopup}
             >
               Delete Account
             </button>
@@ -170,12 +211,19 @@ export default function DashboardPage() {
       {
         deletePopupOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" onClick={() => setDeletePopupOpen(false)}>
-            <div className="bg-white p-8 rounded-lg shadow-lg max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white p-8 rounded-lg shadow-lg max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
               <div className="text-center mb-6">
                 <h3 className="text-xl font-bold text-red-600 mb-4">⚠️ WARNING</h3>
                 <p className="text-gray-700 mb-2 font-medium">This action will PERMANENTLY delete your account</p>
                 <p className="text-gray-600">Are you sure you want to proceed?</p>
               </div>
+              
+              {deleteError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm font-medium">{deleteErrorMessage}</p>
+                </div>
+              )}
+              
               <div className="flex justify-center space-x-4">
                 <button 
                   onClick={() => setDeletePopupOpen(false)}
