@@ -1,10 +1,21 @@
 "use client";
 
 import styles from "../page.module.css";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [showCalendarError, setShowCalendarError] = useState(false);
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error === 'calendar_access_required') {
+      setShowCalendarError(true);
+    }
+  }, [searchParams]);
+
   // This handler triggers a full browser redirect to the FastAPI backend,
   // which starts the Google OAuth flow. The backend will handle all redirects
   // and eventually send the user back to the homepage ("/") after login.
@@ -34,6 +45,27 @@ export default function Login() {
         <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>
           Sign in to PlanWeeklyAI
         </h1>
+        
+        {showCalendarError && (
+          <div style={{
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            maxWidth: 400,
+            textAlign: 'center'
+          }}>
+            <div style={{ color: '#dc2626', fontWeight: 600, marginBottom: '0.5rem' }}>
+              ⚠️ Calendar Access Required
+            </div>
+            <p style={{ color: '#7f1d1d', fontSize: '0.9rem', margin: 0 }}>
+              PlanWeeklyAI needs access to your Google Calendar to create and manage your schedules. 
+              Please grant calendar access when prompted during the sign-in process.
+            </p>
+          </div>
+        )}
+        
         <button
           onClick={handleLogin}
           className={styles.primary}

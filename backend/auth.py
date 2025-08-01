@@ -142,6 +142,7 @@ def google_callback(request: Request):
         jwt_expiry = timedelta(days=7)
         token = create_token({"user_id": user_id, "email": user_email}, expires_delta=jwt_expiry)
 
+        # Always redirect to dashboard - calendar permissions will be checked when needed
         response = RedirectResponse(url=f"{os.getenv('FRONTEND_URL')}/dashboard")
         response.set_cookie(
             key="token",

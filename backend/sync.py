@@ -13,7 +13,7 @@ router = APIRouter()
 async def sync_schedule(request: Request):
     user_id = get_user_id(request)
     if not user_id:
-        raise HTTPException(status_code=401, detail="User not logged in. Please log in again.")
+        raise HTTPException(status_code=401, detail="User not logged in. Please log in before syncing your schedule.")
 
     # Get user's access token from DB
     conn = get_db_connection()
@@ -22,6 +22,14 @@ async def sync_schedule(request: Request):
     user = cursor.fetchone()
     if not user:
         raise HTTPException(status_code=401, detail="User not found. Please log in again.")
+
+    has_calendar_scope = False
+    for scope in user["granted_scopes"]:
+        if scope == "https://www.googleapis.com/auth/calendar":
+            has_calendar_scope = True
+    
+    if not has_calendar_scope:
+        raise HTTPException(status_code=401, detail="You do not have permission to sync your schedule. Please log out and log in with permissions.")
     
     access_token = user["access_token"]
     if user["token_expiry"] < datetime.now(timezone.utc):

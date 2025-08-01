@@ -161,9 +161,34 @@ def get_google_calendar_events(access_token, time_zone):
         "orderBy": "startTime",
         "maxResults": 2500
     }
-    response = requests.get(url, headers=headers, params=params)
-    response.raise_for_status()
-    return response.json()["items"]
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        return response.json()["items"]
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 403:
+            # Permission denied
+            raise HTTPException(
+                status_code=403,
+                detail="Access to your Google Calendar is denied. Please re-authenticate and grant access."
+            )
+        elif response.status_code == 401:
+            # Invalid/expired token
+            raise HTTPException(
+                status_code=401,
+                detail="Your Google session has expired or was revoked. Please log in again."
+            )
+        else:
+            # Other errors
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Unexpected error: {response.text}"
+            )
+    except requests.exceptions.RequestException:
+        raise HTTPException(
+            status_code=503,
+            detail="Network error occurred while contacting Google Calendar API."
+        )
 
 def extract_events(calendar):
     simplified = []
