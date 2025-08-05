@@ -7,12 +7,23 @@ import { useEffect, useState } from "react";
 export default function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [showCalendarError, setShowCalendarError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [showCalendarError, setShowError] = useState<boolean>(false);
+  const calenderMessage : string = "PlanWeeklyAI needs access to your Google Calendar to create and manage your schedules. Please grant calendar access when prompted during the sign-in process.";
+  const serverMessage : string = "An error occurred while trying to log in. Please try again later.";
 
   useEffect(() => {
     const error = searchParams.get('error');
     if (error === 'calendar_access_required') {
-      setShowCalendarError(true);
+      setShowError(true);
+      setErrorMessage(calenderMessage)
+    }
+    else if (error === 'server_error') {
+      setShowError(true);
+      setErrorMessage(serverMessage);
+    } else {
+      setShowError(false);
+      setErrorMessage("");
     }
   }, [searchParams]);
 
@@ -22,6 +33,15 @@ export default function Login() {
   // Or send user back to ("/login?<some-error>") if there is an error.
   const handleGoogleLogin = () => {
     window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_AUTH_URL}`;
+    const error = searchParams.get('error');
+    if(error === 'calendar_access_required') {
+      setShowError(true);
+      setErrorMessage
+    }
+    else if (error === 'server_error') {
+      setShowError(true);
+      setErrorMessage(serverMessage);
+    }
   };
 
   const handleLogin = async () => {
@@ -31,9 +51,6 @@ export default function Login() {
         credentials: 'include',
       });
       const data = await response.json();
-      if (data.error) {
-        setShowCalendarError(true);
-      }
       if (!response.ok) {
         throw new Error("Error logging in user. Using Google login instead.");
       }

@@ -79,7 +79,9 @@ def google_callback(request: Request):
 
     id_token_value = getattr(credentials, 'id_token', None)
     if not id_token_value:
-        return {"error": "No id_token returned from Google. Cannot authenticate user."}
+        return RedirectResponse(
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error",
+        )
 
     id_info = id_token.verify_oauth2_token(
         id_token_value,
@@ -137,7 +139,8 @@ def google_callback(request: Request):
                 conn.rollback()
                 cursor.close()
                 conn.close()
-                return {"error": "Failed to insert new user."}
+                return RedirectResponse(
+                    url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error",)
             user_id = insert_result["id"]
 
         conn.commit()
@@ -164,8 +167,8 @@ def google_callback(request: Request):
         return response
 
     except Exception as e:
-        print("DB Error:", e)
-        return {"error": "Failed to process user info"}
+        return RedirectResponse(
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error")
 
 
 
