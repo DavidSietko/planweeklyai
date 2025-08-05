@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Schedule, Day } from '../../utils/interfaces';
-import { getSchedule, saveSchedule, isSameSchedule } from '../../utils/scheduleUtils';
+import { getSchedule, saveSchedule, isSameSchedule, validateSchedule } from '../../utils/scheduleUtils';
 import ScheduleDashboard from '../../components/ScheduleDashboard';
 import DayScheduleView from '../../components/DayScheduleView';
 
@@ -25,6 +25,8 @@ export default function DashboardPage() {
 
   const [logoutError, setLogoutError] = useState<boolean>(false);
   const [logoutMessage, setLogoutMessage] = useState<string>("");
+
+  const [errors, setErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -134,9 +136,17 @@ export default function DashboardPage() {
   }
 
   const handleGenerateSchedule = () => {
-    router.push('/schedule');
-  };
+    if (!schedule) return;
+    const validationErrors = validateSchedule(schedule);
+    setErrors(validationErrors);
 
+    if(validationErrors.length > 0) {
+      setTimeout(() => { setErrors([]); }, 3000);
+    }
+    else {
+        router.push('/schedule');
+    }
+  }
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -320,6 +330,8 @@ export default function DashboardPage() {
                 setSaveSuccess={setSaved}
                 noChange={noChange}
                 setNoChange={setNoChange}
+                errors={errors}
+                setErrors={setErrors}
               />
             ) : (
               <DayScheduleView

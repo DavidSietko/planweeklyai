@@ -77,12 +77,8 @@ export default function Login() {
             maxWidth: 400,
             textAlign: 'center'
           }}>
-            <div style={{ color: '#dc2626', fontWeight: 600, marginBottom: '0.5rem' }}>
-              ⚠️ Calendar Access Required
-            </div>
             <p style={{ color: '#7f1d1d', fontSize: '0.9rem', margin: 0 }}>
-              PlanWeeklyAI needs access to your Google Calendar to create and manage your schedules. 
-              Please grant calendar access when prompted during the sign-in process.
+              {errorMessage}
             </p>
           </div>
         )}

@@ -4,14 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { Schedule, Task, MandatoryTask, Day, DaySelection } from '../utils/interfaces';
 import { 
     DAY_LABELS, 
-    formatTime, 
-    getTaskDurationString, 
     createEmptyTask,
     createEmptyMandatoryTask,
     validateSchedule,
     getActiveDaysString,
     arrayToDaySelection,
-    daySelectionToArray
 } from '../utils/scheduleUtils';
 
 interface ScheduleDashboardProps {
@@ -21,6 +18,8 @@ interface ScheduleDashboardProps {
     noChange: boolean;
     setNoChange: React.Dispatch<React.SetStateAction<boolean>>;
     onSave: (schedule: Schedule) => void;
+    errors: string[];
+    setErrors: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export default function ScheduleDashboard({ 
@@ -30,9 +29,10 @@ export default function ScheduleDashboard({
     noChange,
     setNoChange,
     onSave,
+    errors,
+    setErrors
 }: ScheduleDashboardProps) {
     const [schedule, setSchedule] = useState<Schedule>(initialSchedule);
-    const [errors, setErrors] = useState<string[]>([]);
     let successTimeout: NodeJS.Timeout | null = null;
     let noChangesTimeout: NodeJS.Timeout | null = null;
 
@@ -110,12 +110,19 @@ export default function ScheduleDashboard({
         const validationErrors = validateSchedule(schedule);
         setErrors(validationErrors);
         
-        if (validationErrors.length === 0) {
-            if (successTimeout) clearTimeout(successTimeout);
+        if (successTimeout) clearTimeout(successTimeout);
             successTimeout = setTimeout(() => setSaveSuccess(false), 3000);
 
-            if (noChangesTimeout) clearTimeout(noChangesTimeout);
+        if (noChangesTimeout) clearTimeout(noChangesTimeout);
             noChangesTimeout = setTimeout(() => setNoChange(false), 3000);
+
+        if (validationErrors.length > 0) {
+            setSaveSuccess(false);
+            setNoChange(false);
+        }
+    
+        if(validationErrors) {
+            setTimeout(() => { setErrors([]); }, 3000);
         }
     };
 
