@@ -18,7 +18,8 @@ export default function Login() {
 
   // This handler triggers a full browser redirect to the FastAPI backend,
   // which starts the Google OAuth flow. The backend will handle all redirects
-  // and eventually send the user back to the homepage ("/") after login.
+  // and eventually send the user back to the dashboard ("/dashboard") after login.
+  // Or send user back to ("/login?<some-error>") if there is an error.
   const handleGoogleLogin = () => {
     window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_AUTH_URL}`;
   };
@@ -30,6 +31,9 @@ export default function Login() {
         credentials: 'include',
       });
       const data = await response.json();
+      if (data.error) {
+        setShowCalendarError(true);
+      }
       if (!response.ok) {
         throw new Error("Error logging in user. Using Google login instead.");
       }

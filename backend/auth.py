@@ -49,11 +49,20 @@ def google_login(request: Request):
 
 @router.get("/auth/google/callback")
 def google_callback(request: Request):
+    # Handle Google OAuth errors (like access_denied)
+    error_param = request.query_params.get("error")
+    if error_param:
+        return RedirectResponse(
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=calendar_access_required"
+        )
+    
     state = request.session.get('state')
     returned_state = request.query_params.get("state")
 
     if not state or state != returned_state:
-        raise HTTPException(status_code=400, detail="Invalid state parameter")
+        return RedirectResponse(
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=calendar_access_required",
+        )
 
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         'secrets/client_secret.json',
