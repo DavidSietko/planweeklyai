@@ -34,8 +34,8 @@ export default function DashboardPage() {
         const data = await getSchedule();
         data.time_zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         setSchedule(data);
-      } catch (err: any) {
-        const msg = err.message || 'Failed to load schedule';
+      } catch (err: unknown) {
+        const msg = (err as Error).message || 'Failed to load schedule';
         console.log(msg);
         if (msg.includes('Not authenticated') || msg.includes('logging in') || msg.includes("log in")) {
           setAuthError(msg);
@@ -58,8 +58,8 @@ export default function DashboardPage() {
       await saveSchedule(savedSchedule);
       setSchedule(savedSchedule);
       setSaved(true);
-    } catch (err: any) {
-      const msg = err.message || 'Failed to save schedule';
+    } catch (err: unknown) {
+      const msg = (err as Error).message || 'Failed to save schedule';
       if (msg.includes('Not authenticated') || msg.includes('logging in') || msg.includes("log in")) {
         setAuthError(msg);
       } else {

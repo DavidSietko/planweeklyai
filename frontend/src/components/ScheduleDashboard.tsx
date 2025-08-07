@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Schedule, Task, MandatoryTask, Day, DaySelection } from '../utils/interfaces';
+import React, { useState } from 'react';
+import { Schedule, Task, MandatoryTask, Day } from '../utils/interfaces';
 import { 
     DAY_LABELS, 
     createEmptyTask,

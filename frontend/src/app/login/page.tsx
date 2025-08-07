@@ -2,9 +2,9 @@
 
 import styles from "../page.module.css";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-export default function Login() {
+function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -25,7 +25,7 @@ export default function Login() {
       setShowError(false);
       setErrorMessage("");
     }
-  }, [searchParams]);
+  }, []);
 
   // This handler triggers a full browser redirect to the FastAPI backend,
   // which starts the Google OAuth flow. The backend will handle all redirects
@@ -36,7 +36,7 @@ export default function Login() {
     const error = searchParams.get('error');
     if(error === 'calendar_access_required') {
       setShowError(true);
-      setErrorMessage
+      setErrorMessage(calenderMessage)
     }
     else if (error === 'server_error') {
       setShowError(true);
@@ -50,12 +50,13 @@ export default function Login() {
         method: 'GET',
         credentials: 'include',
       });
-      const data = await response.json();
+
       if (!response.ok) {
         throw new Error("Error logging in user. Using Google login instead.");
       }
       router.push("/dashboard");
-    } catch (Error: any) {
+    } catch (error: unknown) {
+      console.log((error as Error).message || "An error occurred while logging in.");
       handleGoogleLogin();
     }
   };
@@ -116,4 +117,16 @@ export default function Login() {
       </main>
     </div>
   );
-} 
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div>
+        <p>Loading...</p>
+      </div>
+    }>
+      <Login />
+    </Suspense>
+  );
+}
