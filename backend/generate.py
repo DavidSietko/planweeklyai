@@ -67,7 +67,7 @@ YOUR PRIMARY OBJECTIVES (IN ORDER OF IMPORTANCE):
    - Frequency requirements
 4. NEVER double-book any time slots
 5. Maintain reasonable breaks between tasks when possible
-6. MAKE SURE THE SCHEDULE IS FOR THE CURRENT WEEK starting from {datetime.now()} UNTIL THE END OF THIS WEEK
+6. MAKE SURE THE SCHEDULE IS FOR THE CURRENT WEEK OF ${datetime.now()} AND THE SCHEDULE SHOULD ONLY BE FOR THE DAYS SPECIFIED IN THE USERS SCHEDULE TEMPLATE
 
 STRICT REQUIREMENTS:
 - All times must be in {time_zone} timezone
