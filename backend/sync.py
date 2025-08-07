@@ -25,7 +25,7 @@ async def sync_schedule(request: Request):
 
     has_calendar_scope = False
     for scope in user["granted_scopes"]:
-        if scope == "https://www.googleapis.com/auth/calendar":
+        if scope == "https://www.googleapis.com/auth/calendar.events":
             has_calendar_scope = True
     
     if not has_calendar_scope:

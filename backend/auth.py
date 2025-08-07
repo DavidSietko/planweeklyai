@@ -12,7 +12,7 @@ router = APIRouter()
 SCOPES = [
     "openid",
     "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/calendar"
+    "https://www.googleapis.com/auth/calendar.events"
 ]
 
 @router.get("/auth/login")
@@ -73,7 +73,12 @@ def google_callback(request: Request):
 
     # Reconstruct the full URL the user was redirected to
     authorization_response = str(request.url)
-    flow.fetch_token(authorization_response=authorization_response)
+    try:
+        flow.fetch_token(authorization_response=authorization_response)
+    except Exception as e:
+        return RedirectResponse(
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error"
+        )
 
     credentials = flow.credentials
 
