@@ -1,15 +1,47 @@
 "use client";
 
 import styles from "../page.module.css";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [showCalendarError, setShowError] = useState<boolean>(false);
+  const calenderMessage : string = "PlanWeeklyAI needs access to your Google Calendar to create and manage your schedules. Please grant calendar access when prompted during the sign-in process.";
+  const serverMessage : string = "An error occurred while trying to log in. Please try again later.";
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error === 'calendar_access_required') {
+      setShowError(true);
+      setErrorMessage(calenderMessage)
+    }
+    else if (error === 'server_error') {
+      setShowError(true);
+      setErrorMessage(serverMessage);
+    } else {
+      setShowError(false);
+      setErrorMessage("");
+    }
+  }, [searchParams]);
+
   // This handler triggers a full browser redirect to the FastAPI backend,
   // which starts the Google OAuth flow. The backend will handle all redirects
-  // and eventually send the user back to the homepage ("/") after login.
+  // and eventually send the user back to the dashboard ("/dashboard") after login.
+  // Or send user back to ("/login?<some-error>") if there is an error.
   const handleGoogleLogin = () => {
     window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_AUTH_URL}`;
+    const error = searchParams.get('error');
+    if(error === 'calendar_access_required') {
+      setShowError(true);
+      setErrorMessage
+    }
+    else if (error === 'server_error') {
+      setShowError(true);
+      setErrorMessage(serverMessage);
+    }
   };
 
   const handleLogin = async () => {
@@ -34,6 +66,23 @@ export default function Login() {
         <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>
           Sign in to PlanWeeklyAI
         </h1>
+        
+        {showCalendarError && (
+          <div style={{
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            maxWidth: 400,
+            textAlign: 'center'
+          }}>
+            <p style={{ color: '#7f1d1d', fontSize: '0.9rem', margin: 0 }}>
+              {errorMessage}
+            </p>
+          </div>
+        )}
+        
         <button
           onClick={handleLogin}
           className={styles.primary}

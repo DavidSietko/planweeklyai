@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 import google_auth_oauthlib.flow
 from google.oauth2 import id_token
 from google.auth.transport import requests
@@ -28,7 +28,7 @@ def login(request: Request):
         if not user:
             raise HTTPException(status_code=401, detail="User not found. Please log in again.")
         else:
-            return {"message": "Login successfull"}
+            return {"message": "Login successful"}
 
 @router.get("/auth/google/login")
 def google_login(request: Request):
@@ -49,11 +49,20 @@ def google_login(request: Request):
 
 @router.get("/auth/google/callback")
 def google_callback(request: Request):
+    # Handle Google OAuth errors (like access_denied)
+    error_param = request.query_params.get("error")
+    if error_param:
+        return RedirectResponse(
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=calendar_access_required"
+        )
+    
     state = request.session.get('state')
     returned_state = request.query_params.get("state")
 
     if not state or state != returned_state:
-        raise HTTPException(status_code=400, detail="Invalid state parameter")
+        return RedirectResponse(
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=calendar_access_required",
+        )
 
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         'secrets/client_secret.json',
@@ -70,7 +79,9 @@ def google_callback(request: Request):
 
     id_token_value = getattr(credentials, 'id_token', None)
     if not id_token_value:
-        return {"error": "No id_token returned from Google. Cannot authenticate user."}
+        return RedirectResponse(
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error",
+        )
 
     id_info = id_token.verify_oauth2_token(
         id_token_value,
@@ -128,7 +139,8 @@ def google_callback(request: Request):
                 conn.rollback()
                 cursor.close()
                 conn.close()
-                return {"error": "Failed to insert new user."}
+                return RedirectResponse(
+                    url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error",)
             user_id = insert_result["id"]
 
         conn.commit()
@@ -142,6 +154,7 @@ def google_callback(request: Request):
         jwt_expiry = timedelta(days=7)
         token = create_token({"user_id": user_id, "email": user_email}, expires_delta=jwt_expiry)
 
+        # Always redirect to dashboard - calendar permissions will be checked when needed
         response = RedirectResponse(url=f"{os.getenv('FRONTEND_URL')}/dashboard")
         response.set_cookie(
             key="token",
@@ -154,5 +167,53 @@ def google_callback(request: Request):
         return response
 
     except Exception as e:
-        print("DB Error:", e)
-        return {"error": "Failed to process user info"}
+        return RedirectResponse(
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error")
+
+
+
+@router.get("/auth/logout")
+def logout():
+    response = JSONResponse(content={"message": "Logged out successfully"})
+    
+    # Delete the token cookie
+    response.set_cookie(
+        key="token",
+        value="",
+        expires=0,
+        max_age=0,
+        httponly=True,
+        secure=True,
+        samesite="lax"
+    )
+    
+    return response
+
+@router.delete("/auth/delete/account")
+def delete_account(request: Request):
+    user_id = get_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Looks like you are not logged in. Please log in before deleting your account.")
+    
+    # Delete user from database
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM schedules WHERE user_id = %s", (user_id,))
+    cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    conn.commit()
+    conn.close()
+    
+    response = JSONResponse(content={"message": "Account deleted successfully"})
+    
+    # Delete the token cookie
+    response.set_cookie(
+        key="token",
+        value="",
+        expires=0,
+        max_age=0,
+        httponly=True,
+        secure=True,
+        samesite="lax"
+    )
+    
+    return response

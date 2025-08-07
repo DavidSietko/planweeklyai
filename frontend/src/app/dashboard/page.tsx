@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Schedule, Day } from '../../utils/interfaces';
-import { getSchedule, saveSchedule, isSameSchedule } from '../../utils/scheduleUtils';
+import { getSchedule, saveSchedule, isSameSchedule, validateSchedule } from '../../utils/scheduleUtils';
 import ScheduleDashboard from '../../components/ScheduleDashboard';
 import DayScheduleView from '../../components/DayScheduleView';
 
@@ -18,6 +18,15 @@ export default function DashboardPage() {
   const [saved, setSaved] = useState<boolean>(false);
   const [noChange, setNoChange] = useState<boolean>(false);
   const router = useRouter();
+
+  const [deletePopupOpen, setDeletePopupOpen] = useState<boolean>(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string>("");
+  const [deleteError, setDeleteError] = useState<boolean>(false);
+
+  const [logoutError, setLogoutError] = useState<boolean>(false);
+  const [logoutMessage, setLogoutMessage] = useState<string>("");
+
+  const [errors, setErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -59,10 +68,85 @@ export default function DashboardPage() {
     }
   };
 
-  const handleGenerateSchedule = () => {
-    router.push('/schedule');
-  };
+  const handleLogout = async() => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+          method: 'GET',
+          credentials: 'include',
+      });
 
+      if(!response.ok && response.status !== 302 && response.status !== 307) {
+        throw new Error("We are having trouble logging you out. Please try again later");
+      }
+      router.push("/login");
+
+    } catch (error: unknown) {
+      if(error instanceof Error) {
+        setLogoutError(true);
+        setLogoutMessage(error.message);
+        setTimeout(() => {
+          setLogoutError(false);
+        }, 2000);
+      }
+    }
+  }
+
+  const openDeletePopup = () => {
+    setSidebarOpen(false);
+    setDeletePopupOpen(true);
+  }
+
+  const deleteAccount = async() => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/delete/account`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+
+      const data = await response.json();
+      if(!response.ok) {
+        const message: string = data.detail;
+        if(message.includes("Failed to fetch")) {
+          throw new Error("We are having trouble deleting your account. Please try again later");
+        }
+        else if(message.includes("log in")) {
+          throw new Error("Looks like you are not logged in. Please log in before trying to delete your account");
+        }
+        else {
+          throw new Error("We are having trouble deleting your account. Please try again later.");
+        }
+      }
+      router.push("/");
+    } catch(error: unknown) {
+      setDeleteError(true);
+      if(error instanceof Error) {
+        if(error.message.includes("Failed to fetch")) {
+          setDeleteErrorMessage("We are having trouble deleting your account. Please try again later");
+        }
+        else {
+          setDeleteErrorMessage(error.message);
+        }
+      }
+      else {
+        setDeleteErrorMessage("We are experiencing difficulties with deleting your account. Try again later.");
+      }
+
+      setTimeout(() => setDeleteError(false), 2000);
+    }
+  }
+
+  const handleGenerateSchedule = () => {
+    if (!schedule) return;
+    const validationErrors = validateSchedule(schedule);
+    setErrors(validationErrors);
+
+    if(validationErrors.length > 0) {
+      setTimeout(() => { setErrors([]); }, 3000);
+    }
+    else {
+        router.push('/schedule');
+    }
+  }
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
@@ -89,12 +173,38 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Menu</h2>
-          <div className="space-y-2">
-            <div className="p-3 bg-gray-100 rounded-md">
-              <p className="text-gray-600">Sidebar content coming soon...</p>
-            </div>
+        <div className="p-6 h-full flex flex-col">
+          <h2 className="text-xl font-semibold text-gray-800 mb-8">Menu</h2>
+          <div className="flex flex-col space-y-4 flex-1">
+            <button 
+              className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
+              onClick={() => router.push("/")}
+            >
+              Home
+            </button>
+            <button 
+              className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
+              onClick={() => router.push("/login")}
+            >
+              Login
+            </button>
+            <button 
+              className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+            <button 
+              className="w-full text-left px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 hover:scale-105 transition-all duration-200 font-medium" 
+              onClick={openDeletePopup}
+            >
+              Delete Account
+            </button>
+            {logoutError && (
+                  <div className="bg-red-50 border border-red-300 text-black px-3 py-2 rounded-lg text-sm">
+                    <p>{logoutMessage}</p>
+                  </div>
+                )}
           </div>
         </div>
       </div>
@@ -106,6 +216,42 @@ export default function DashboardPage() {
           onClick={toggleSidebar}
         />
       )}
+
+      {/* Overlay for Delete Account popup */}
+      {
+        deletePopupOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" onClick={() => setDeletePopupOpen(false)}>
+            <div className="bg-white p-8 rounded-lg shadow-lg max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-red-600 mb-4">⚠️ WARNING</h3>
+                <p className="text-gray-700 mb-2 font-medium">This action will PERMANENTLY delete your account</p>
+                <p className="text-gray-600">Are you sure you want to proceed?</p>
+              </div>
+              
+              {deleteError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm font-medium">{deleteErrorMessage}</p>
+                </div>
+              )}
+              
+              <div className="flex justify-center space-x-4">
+                <button 
+                  onClick={() => setDeletePopupOpen(false)}
+                  className="px-6 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-all duration-200"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={deleteAccount}
+                  className="px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold rounded-lg hover:from-red-600 hover:to-red-700 transform hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300 focus:ring-opacity-50"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>   
+        )
+      }
 
       {/* Main Content */}
       <div className="flex-1">
@@ -184,6 +330,8 @@ export default function DashboardPage() {
                 setSaveSuccess={setSaved}
                 noChange={noChange}
                 setNoChange={setNoChange}
+                errors={errors}
+                setErrors={setErrors}
               />
             ) : (
               <DayScheduleView

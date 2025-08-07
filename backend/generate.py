@@ -67,6 +67,7 @@ YOUR PRIMARY OBJECTIVES (IN ORDER OF IMPORTANCE):
    - Frequency requirements
 4. NEVER double-book any time slots
 5. Maintain reasonable breaks between tasks when possible
+6. MAKE SURE THE SCHEDULE IS FOR THE CURRENT WEEK OF ${datetime.now()} AND THE SCHEDULE SHOULD ONLY BE FOR THE DAYS SPECIFIED IN THE USERS SCHEDULE TEMPLATE
 
 STRICT REQUIREMENTS:
 - All times must be in {time_zone} timezone
@@ -109,27 +110,34 @@ VALIDATION STEPS YOU MUST PERFORM:
 4. Double-check no events overlap (start < end of previous event)
 5. Verify all timezones are correctly set to {time_zone}
 
-OUTPUT ONLY THE JSON ARRAY. NO EXPLANATIONS, NO COMMENTS, NO APOLOGIES, ONLY VALID JSON.
+OUTPUT ONLY THE JSON ARRAY. NO EXPLANATIONS, NO COMMENTS, NO APOLOGIES, ONLY VALID JSON IN THE FORMAT SPECIFIED ABOVE.
 """
 
-    completion = client.chat.completions.create(
-        extra_body={},
-        model="moonshotai/kimi-k2:free",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
+    try:
+        completion = client.chat.completions.create(
+            extra_body={},
+            model="moonshotai/kimi-k2:free",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+    except:
+        raise HTTPException(status_code=429, detail="The AI is currently down. Please try again later")
+        
     response_text = completion.choices[0].message.content
     if not response_text:
         raise HTTPException(status_code=500, detail="Failed to generate schedule. Please try again.")
 
-    events = json.loads(response_text)
-
     conn.commit()
     conn.close()
+    try:
+        events = json.loads(response_text)
+    except:
+        raise HTTPException(status_code=400, detail="Error generating your schedule. Please try again");
+
     return events
 
 def get_google_calendar_events(access_token, time_zone):
@@ -153,9 +161,34 @@ def get_google_calendar_events(access_token, time_zone):
         "orderBy": "startTime",
         "maxResults": 2500
     }
-    response = requests.get(url, headers=headers, params=params)
-    response.raise_for_status()
-    return response.json()["items"]
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        return response.json()["items"]
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 403:
+            # Permission denied
+            raise HTTPException(
+                status_code=403,
+                detail="Access to your Google Calendar is denied. Please re-authenticate and grant access."
+            )
+        elif response.status_code == 401:
+            # Invalid/expired token
+            raise HTTPException(
+                status_code=401,
+                detail="Your Google session has expired or was revoked. Please log in again."
+            )
+        else:
+            # Other errors
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Unexpected error: {response.text}"
+            )
+    except requests.exceptions.RequestException:
+        raise HTTPException(
+            status_code=503,
+            detail="Network error occurred while contacting Google Calendar API."
+        )
 
 def extract_events(calendar):
     simplified = []
