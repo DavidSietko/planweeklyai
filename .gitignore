@@ -1,1 +1,4 @@
 /secrets
+docker-compose.yml
+Dockerfile
+.dockerignore
