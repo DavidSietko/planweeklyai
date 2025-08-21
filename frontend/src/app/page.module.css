@@ -191,7 +191,6 @@ a.secondary {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-fill-color: transparent;
 }
 
 .main h2 {
@@ -295,4 +294,18 @@ a.secondary {
     text-align: center !important;
     word-break: break-word;
   }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 80%;
+  height: clamp(300px, 80%, 600px);
+  border-color: black;
+  border-image: linear-gradient(120deg, #22c55e, #2563eb) 1;
+  gap: 30px;
+  background-color: white;
 }
