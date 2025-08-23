@@ -144,7 +144,7 @@ export default function DashboardPage() {
       setTimeout(() => { setErrors([]); }, 3000);
     }
     else {
-        router.push('/schedule');
+        router.push('/weekly-schedule');
     }
   }
   const toggleSidebar = () => {
