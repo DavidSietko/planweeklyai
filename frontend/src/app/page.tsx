@@ -74,6 +74,9 @@ export default function Home() {
         <span className={styles.note}>
           Note: This requires signing in with your Google account so the AI can sync your weekly schedule with your Google Calendar.
         </span>
+        <span className={styles.note}>
+          By logging in to this site you agree with our cookie policy. Please read our <a href="/privacy-policy" style={{ color: '#03f70fff', textDecoration: 'underline' }}>privacy policy</a> and <a href="/terms-of-service" style={{ color: '#03f70fff', textDecoration: 'underline' }}>terms of service</a> for more information.
+        </span>
       </main>
     </div>
   );
