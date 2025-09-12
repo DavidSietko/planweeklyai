@@ -77,6 +77,7 @@ def google_callback(request: Request):
     try:
         flow.fetch_token(authorization_response=authorization_response)
     except Exception as e:
+        print("OAuth callback error:", e)
         return RedirectResponse(
             url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error"
         )
@@ -92,7 +93,8 @@ def google_callback(request: Request):
         resp.raise_for_status()
         user_info = resp.json()
         user_email = user_info["email"]
-    except Exception:
+    except Exception as e:
+        print("Failed to fetch user info from Google.", e)
         return RedirectResponse(
             url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error"
         )
@@ -145,6 +147,7 @@ def google_callback(request: Request):
                 conn.rollback()
                 cursor.close()
                 conn.close()
+                print("Failed to insert new user into database.")
                 return RedirectResponse(
                     url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error",)
             user_id = insert_result["id"]
