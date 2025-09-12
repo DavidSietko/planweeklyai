@@ -14,11 +14,12 @@ export default function TermsOfServicePage() {
         <div className={styles.contentBox}>
           <h2 className={styles.title}>Accounts</h2>
           <p>You must sign in through google using a valid email. You are responsible for maintaining the security of your account.</p>
+          <p>By signing in, you agree to the collection and use of your information as described in our Privacy Policy.</p>
         </div>
         <hr className={styles.Hr} />
         <div className={styles.contentBox}>
           <h2 className={styles.title}>User Data</h2>
-          <p>By connecting your Google Calendar, you grant us permission to read and write events for scheduling purposes. We will not use this data for any other purpose or share it with third parties.</p>
+          <p>By signing in, you agree to the collection of your google email address and access tokens to your google calendar.</p>
         </div>
         <hr className={styles.Hr} />
         <p className={styles.contentBox}>For more information please contact planweeklyai@gmail.com</p>
