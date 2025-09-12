@@ -12,6 +12,7 @@ from utils import get_db_connection, create_token, get_token, get_user_id
 router = APIRouter()
 
 SCOPES = [
+    "openid",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/calendar.events"
 ]
