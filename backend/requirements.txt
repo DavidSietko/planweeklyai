@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 httpx
+requests
 authlib
 google-auth
 google-auth-oauthlib

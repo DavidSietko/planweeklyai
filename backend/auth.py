@@ -6,6 +6,8 @@ from google.auth.transport import requests
 import os
 from psycopg2.extras import RealDictCursor
 from datetime import timedelta
+from google.oauth2.credentials import Credentials
+import requests
 from utils import get_db_connection, create_token, get_token, get_user_id
 router = APIRouter()
 
@@ -81,21 +83,21 @@ def google_callback(request: Request):
 
     credentials = flow.credentials
 
-    id_token_value = getattr(credentials, 'id_token', None)
-    if not id_token_value:
+    creds = Credentials(token=credentials.token)
+    try:
+        resp = requests.get(
+            "https://www.googleapis.com/oauth2/v1/userinfo",
+            headers={"Authorization": f"Bearer {creds.token}"}
+        )
+        resp.raise_for_status()
+        user_info = resp.json()
+        user_email = user_info["email"]
+    except Exception:
         return RedirectResponse(
-            url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error",
+            url=f"{os.getenv('FRONTEND_URL')}/login?error=server_error"
         )
 
-    id_info = id_token.verify_oauth2_token(
-        id_token_value,
-        requests.Request(),
-        credentials.client_id,
-        clock_skew_in_seconds=10  # Allow 10 seconds of clock skew
-    )
-
-    user_email = id_info["email"]
-    granted_scopes = credentials.scopes  # Store as list for Postgres text[]
+    granted_scopes = credentials.scopes
     token_expiry = credentials.expiry
 
     # Store/update in DB
